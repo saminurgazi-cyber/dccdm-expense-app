@@ -13,7 +13,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
   <!-- SheetJS / XLSX -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <!-- Supabase JS -->
+  <!-- Supabase JS Client -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 font-sans antialiased">
@@ -31,7 +31,7 @@
         </div>
       </div>
       <div id="userStatusArea" class="flex items-center gap-2">
-        <!-- Auth status button injected here -->
+        <span class="text-xs bg-blue-900 px-2.5 py-1 rounded border border-blue-700">Connecting to Server...</span>
       </div>
     </div>
   </header>
@@ -39,7 +39,7 @@
   <!-- Main Container -->
   <main class="max-w-7xl mx-auto px-4 py-6">
 
-    <!-- Auth Modal / Card -->
+    <!-- Auth Card -->
     <div id="authContainer" class="max-w-md mx-auto bg-white rounded-xl shadow-md p-6 my-10 border border-slate-200">
       <div class="text-center mb-6">
         <div class="w-12 h-12 bg-blue-100 text-blue-900 rounded-full flex items-center justify-center mx-auto mb-2 text-xl">
@@ -73,10 +73,6 @@
           Don't have an account? Register
         </button>
       </div>
-      
-      <div class="mt-4 p-3 bg-slate-50 rounded-lg text-xs text-slate-500 border text-center">
-        <i class="fa-solid fa-circle-info text-blue-600 mr-1"></i> Demo Mode Active: You can also test offline with built-in storage.
-      </div>
     </div>
 
     <!-- Pending Approval Banner -->
@@ -85,7 +81,7 @@
         <i class="fa-solid fa-clock-rotate-left"></i>
       </div>
       <h2 class="text-base font-bold text-amber-900">Account Pending Approval</h2>
-      <p class="text-xs text-amber-800 mt-2 leading-relaxed">
+      <p id="pendingText" class="text-xs text-amber-800 mt-2 leading-relaxed">
         Your registration is complete! An Administrator of <strong>DAKSHIN CHANDPUR CHILD DEVELOPMENT MISSION</strong> must approve your account before you can log in.
       </p>
       <button onclick="logout()" class="mt-5 text-xs bg-white text-amber-900 px-4 py-2 rounded-lg border border-amber-300 font-medium hover:bg-amber-100">
@@ -93,7 +89,7 @@
       </button>
     </div>
 
-    <!-- Dashboard Main Area (Visible when logged in & approved) -->
+    <!-- Dashboard Main Area -->
     <div id="appDashboard" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
 
       <!-- Left Column: New Voucher Form -->
@@ -146,7 +142,7 @@
             <input type="file" id="attachmentFile" accept="image/*,application/pdf" class="w-full text-xs text-slate-500 border rounded-lg p-1.5 bg-slate-50">
           </div>
 
-          <button type="submit" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium py-2.5 rounded-lg text-xs transition shadow flex items-center justify-center gap-2">
+          <button type="submit" id="saveVoucherBtn" class="w-full bg-blue-900 hover:bg-blue-800 text-white font-medium py-2.5 rounded-lg text-xs transition shadow flex items-center justify-center gap-2">
             <i class="fa-solid fa-floppy-disk"></i> Save Expense Voucher
           </button>
         </form>
@@ -196,7 +192,7 @@
               </tr>
             </thead>
             <tbody id="expenseTableBody" class="divide-y divide-slate-100">
-              <!-- Rendered dynamically -->
+              <!-- Dynamic rows -->
             </tbody>
             <tfoot>
               <tr class="bg-slate-50 font-bold text-slate-900 border-t-2 border-slate-200">
@@ -212,20 +208,80 @@
     </div>
   </main>
 
+  <!-- JavaScript Section -->
   <script>
-    // State management
+    // ============================================================
+    // 1. SUPABASE CONFIGURATION
+    // ============================================================
+    const SUPABASE_URL = 'https://vtzcwmqiyuqmzgwctuut.supabase.co';
+    const SUPABASE_ANON_KEY = 	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0emN3bXFpeXVxbXpnd2N0dXV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMDA3NTAsImV4cCI6MjEwMTc3Njc1MH0.VC8xy-Rfxva1oY8vW4WXpE1YSPspx2aYdh110SZiE2k'; //
+
+    const _supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+    // State Variables
     let isRegisterMode = false;
-    let currentUser = JSON.parse(localStorage.getItem('dccdm_current_user')) || null;
-    let expenses = JSON.parse(localStorage.getItem('dccdm_expenses')) || [
-      { id: 1, voucher_id: 'DCCDM-2026-0001', expense_date: '2026-08-01', amount: 2450.00, category: 'Office Supplies', spent_by: 'Rahim Ahmed', paid_to: 'City Paper Store', attachment: null },
-      { id: 2, voucher_id: 'DCCDM-2026-0002', expense_date: '2026-08-02', amount: 350.00, category: 'Travel & Transport', spent_by: 'Karim Hossain', paid_to: 'Rickshaw Fare', attachment: null },
-      { id: 3, voucher_id: 'DCCDM-2026-0003', expense_date: '2026-08-03', amount: 5200.00, category: 'Utility Bills', spent_by: 'Rahim Ahmed', paid_to: 'DESCO Electricity', attachment: null }
-    ];
+    let currentUser = null;
+    let userProfile = null;
+    let expenses = [];
 
     document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
 
-    function init() {
+    // Initialize Auth state listener
+    window.addEventListener('DOMContentLoaded', async () => {
+      if (_supabase) {
+        const { data: { session } } = await _supabase.auth.getSession();
+        if (session) {
+          await handleUserSession(session.user);
+        } else {
+          updateUI();
+        }
+
+        _supabase.auth.onAuthStateChange(async (event, session) => {
+          if (session) {
+            await handleUserSession(session.user);
+          } else {
+            currentUser = null;
+            userProfile = null;
+            expenses = [];
+            updateUI();
+          }
+        });
+      } else {
+        updateUI();
+      }
+    });
+
+    async function handleUserSession(user) {
+      currentUser = user;
+      // Fetch user profile status
+      const { data, error } = await _supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (data) {
+        userProfile = data;
+      } else {
+        userProfile = { email: user.email, full_name: user.email, is_approved: false };
+      }
+
+      if (userProfile && userProfile.is_approved) {
+        await loadExpensesFromSupabase();
+      }
       updateUI();
+    }
+
+    async function loadExpensesFromSupabase() {
+      if (!_supabase) return;
+      const { data, error } = await _supabase
+        .from('expenses')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (data) {
+        expenses = data;
+      }
     }
 
     function updateUI() {
@@ -238,11 +294,14 @@
         authContainer.classList.remove('hidden');
         pendingContainer.classList.add('hidden');
         appDashboard.classList.add('hidden');
-        userStatusArea.innerHTML = `<span class="text-xs bg-blue-900 px-2.5 py-1 rounded border border-blue-700">Guest Access</span>`;
-      } else if (!currentUser.is_approved) {
+        userStatusArea.innerHTML = `<span class="text-xs bg-blue-900 px-2.5 py-1 rounded border border-blue-700">Not Logged In</span>`;
+      } else if (userProfile && !userProfile.is_approved) {
         authContainer.classList.add('hidden');
         pendingContainer.classList.remove('hidden');
         appDashboard.classList.add('hidden');
+        document.getElementById('pendingText').innerHTML = `
+          Account Registered (${currentUser.email})! An Administrator of <strong>DAKSHIN CHANDPUR CHILD DEVELOPMENT MISSION</strong> must set <code>is_approved = TRUE</code> in Supabase before you can access.
+        `;
         userStatusArea.innerHTML = `<span class="text-xs bg-amber-600 px-2.5 py-1 rounded text-white font-medium">Pending Approval</span>`;
       } else {
         authContainer.classList.add('hidden');
@@ -251,10 +310,10 @@
         userStatusArea.innerHTML = `
           <div class="flex items-center gap-2">
             <span class="text-xs bg-blue-900 px-2.5 py-1 rounded border border-blue-700 font-medium">
-              <i class="fa-solid fa-user-check text-emerald-400 mr-1"></i> ${currentUser.name} (${currentUser.role})
+              <i class="fa-solid fa-user-check text-emerald-400 mr-1"></i> ${userProfile?.full_name || currentUser.email} (${userProfile?.role || 'Staff'})
             </span>
             <button onclick="logout()" class="text-xs bg-red-600 hover:bg-red-700 px-2.5 py-1 rounded text-white font-medium transition">
-              <i class="fa-solid fa-right-from-bracket"></i>
+              <i class="fa-solid fa-right-from-bracket"></i> Logout
             </button>
           </div>
         `;
@@ -271,74 +330,102 @@
       document.getElementById('toggleAuthBtn').innerText = isRegisterMode ? 'Already have an account? Login' : "Don't have an account? Register";
     }
 
-    function handleAuth(e) {
+    async function handleAuth(e) {
       e.preventDefault();
-      const email = document.getElementById('authEmail').value;
-      const name = document.getElementById('authName').value || email.split('@')[0];
+      const email = document.getElementById('authEmail').value.trim();
+      const password = document.getElementById('authPassword').value;
+      const fullName = document.getElementById('authName').value.trim();
+
+      if (!_supabase) {
+        alert("Supabase is not initialized. Please check keys.");
+        return;
+      }
 
       if (isRegisterMode) {
-        // Register simulation
-        currentUser = { email, name, role: 'Staff', is_approved: false };
-        localStorage.setItem('dccdm_current_user', JSON.stringify(currentUser));
-        alert('Registration successful! Waiting for Admin approval.');
+        const { data, error } = await _supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { full_name: fullName } }
+        });
+
+        if (error) {
+          alert("Registration Failed: " + error.message);
+        } else {
+          alert("Registration successful! Waiting for admin approval.");
+          if (data.user) {
+            await handleUserSession(data.user);
+          }
+        }
       } else {
-        // Login simulation
-        currentUser = { email, name: name || 'Admin User', role: 'Admin', is_approved: true };
-        localStorage.setItem('dccdm_current_user', JSON.stringify(currentUser));
+        const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          alert("Login Failed: " + error.message);
+        } else {
+          await handleUserSession(data.user);
+        }
       }
-      updateUI();
     }
 
-    function logout() {
-      localStorage.removeItem('dccdm_current_user');
+    async function logout() {
+      if (_supabase) await _supabase.auth.signOut();
       currentUser = null;
+      userProfile = null;
+      expenses = [];
       updateUI();
-    }
-
-    function getNextVoucherId() {
-      const year = new Date().getFullYear();
-      const count = expenses.length + 1;
-      return `DCCDM-${year}-${String(count).padStart(4, '0')}`;
     }
 
     function updateNextVoucherBadge() {
-      document.getElementById('nextVoucherIdBadge').innerText = getNextVoucherId();
+      const year = new Date().getFullYear();
+      const count = expenses.length + 1;
+      document.getElementById('nextVoucherIdBadge').innerText = `DCCDM-${year}-${String(count).padStart(4, '0')}`;
     }
 
-    function saveExpense(e) {
+    async function saveExpense(e) {
       e.preventDefault();
       const expense_date = document.getElementById('expenseDate').value;
       const amount = parseFloat(document.getElementById('expenseAmount').value);
       const category = document.getElementById('expenseCategory').value;
-      const spent_by = document.getElementById('spentBy').value;
-      const paid_to = document.getElementById('paidTo').value;
+      const spent_by = document.getElementById('spentBy').value.trim();
+      const paid_to = document.getElementById('paidTo').value.trim();
       const fileInput = document.getElementById('attachmentFile');
 
-      let attachmentName = null;
-      if (fileInput.files.length > 0) {
-        attachmentName = fileInput.files[0].name;
+      let attachment_url = null;
+
+      if (fileInput.files.length > 0 && _supabase) {
+        const file = fileInput.files[0];
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadErr } = await _supabase.storage.from('vouchers').upload(fileName, file);
+        if (!uploadErr) {
+          const { data: urlData } = _supabase.storage.from('vouchers').getPublicUrl(fileName);
+          attachment_url = urlData.publicUrl;
+        }
       }
 
-      const newExpense = {
-        id: Date.now(),
-        voucher_id: getNextVoucherId(),
-        expense_date,
-        amount,
-        category,
-        spent_by,
-        paid_to,
-        attachment: attachmentName
-      };
+      if (_supabase && currentUser) {
+        const { data, error } = await _supabase.from('expenses').insert([{
+          expense_date,
+          amount,
+          category,
+          spent_by,
+          paid_to,
+          attachment_url,
+          created_by: currentUser.id
+        }]);
 
-      expenses.unshift(newExpense);
-      localStorage.setItem('dccdm_expenses', JSON.stringify(expenses));
-      
+        if (error) {
+          alert("Error saving voucher: " + error.message);
+          return;
+        }
+      }
+
+      alert('Voucher Saved Successfully!');
       document.getElementById('expenseForm').reset();
       document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
-      
+      await loadExpensesFromSupabase();
       renderTable();
       updateNextVoucherBadge();
-      alert('Voucher Saved Successfully!');
     }
 
     function renderTable() {
@@ -350,9 +437,9 @@
       let total = 0;
 
       const filtered = expenses.filter(item => {
-        const matchesSearch = item.voucher_id.toLowerCase().includes(search) ||
-                              item.spent_by.toLowerCase().includes(search) ||
-                              item.paid_to.toLowerCase().includes(search);
+        const matchesSearch = (item.voucher_id || '').toLowerCase().includes(search) ||
+                              (item.spent_by || '').toLowerCase().includes(search) ||
+                              (item.paid_to || '').toLowerCase().includes(search);
         const matchesCat = (catFilter === 'ALL') || (item.category === catFilter);
         return matchesSearch && matchesCat;
       });
@@ -361,22 +448,22 @@
         tbody.innerHTML = `<tr><td colspan="7" class="text-center p-6 text-slate-400">No voucher entries found.</td></tr>`;
       } else {
         filtered.forEach(item => {
-          total += item.amount;
+          total += Number(item.amount);
           const tr = document.createElement('tr');
           tr.className = 'hover:bg-slate-50 transition';
           tr.innerHTML = `
-            <td class="p-2.5 font-mono font-bold text-blue-900">${item.voucher_id}</td>
+            <td class="p-2.5 font-mono font-bold text-blue-900">${item.voucher_id || 'N/A'}</td>
             <td class="p-2.5">${item.expense_date}</td>
             <td class="p-2.5"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-medium border">${item.category}</span></td>
             <td class="p-2.5">${item.spent_by}</td>
             <td class="p-2.5">${item.paid_to}</td>
-            <td class="p-2.5 text-right font-semibold">${item.amount.toFixed(2)}</td>
+            <td class="p-2.5 text-right font-semibold">${Number(item.amount).toFixed(2)}</td>
             <td class="p-2.5 text-center">
               <div class="flex items-center justify-center gap-1.5">
                 <button onclick="exportSinglePDF('${item.voucher_id}')" title="Print A4 PDF" class="p-1.5 bg-blue-50 text-blue-800 hover:bg-blue-100 rounded transition">
                   <i class="fa-solid fa-file-pdf"></i>
                 </button>
-                ${item.attachment ? `<span title="${item.attachment}" class="p-1.5 bg-emerald-50 text-emerald-700 rounded"><i class="fa-solid fa-paperclip"></i></span>` : ''}
+                ${item.attachment_url ? `<a href="${item.attachment_url}" target="_blank" title="View Attachment" class="p-1.5 bg-emerald-50 text-emerald-700 rounded hover:bg-emerald-100"><i class="fa-solid fa-paperclip"></i></a>` : ''}
               </div>
             </td>
           `;
@@ -387,7 +474,6 @@
       document.getElementById('totalAmountCell').innerText = total.toFixed(2) + ' /-';
     }
 
-    // Export Single A4 PDF Voucher
     function exportSinglePDF(voucherId) {
       const item = expenses.find(e => e.voucher_id === voucherId);
       if (!item) return;
@@ -395,7 +481,6 @@
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF('p', 'mm', 'a4');
 
-      // Title Banner
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(30, 58, 138);
@@ -409,7 +494,6 @@
       doc.setDrawColor(30, 58, 138);
       doc.line(15, 28, 195, 28);
 
-      // Meta Details
       doc.setFontSize(9.5);
       doc.setTextColor(31, 41, 55);
       doc.text(`Voucher ID: ${item.voucher_id}`, 15, 38);
@@ -417,17 +501,15 @@
       doc.text(`Spent By: ${item.spent_by}`, 15, 45);
       doc.text(`Paid To: ${item.paid_to}`, 145, 45);
 
-      // Table
       doc.autoTable({
         startY: 52,
         head: [['Category', 'Description / Receiver', 'Amount (BDT)']],
-        body: [[item.category, item.paid_to, `${item.amount.toFixed(2)} /-`]],
+        body: [[item.category, item.paid_to, `${Number(item.amount).toFixed(2)} /-`]],
         headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: 'bold' },
         theme: 'grid',
         styles: { fontSize: 9.5, cellPadding: 4 }
       });
 
-      // Signatures
       const finalY = doc.lastAutoTable.finalY + 35;
       doc.setDrawColor(156, 163, 175);
       doc.line(15, finalY, 65, finalY);
@@ -439,7 +521,6 @@
       doc.save(`${item.voucher_id}.pdf`);
     }
 
-    // Export All to Excel
     function exportExcel() {
       const dataToExport = expenses.map(e => ({
         'Voucher ID': e.voucher_id,
@@ -448,7 +529,7 @@
         'Spent By': e.spent_by,
         'Paid To': e.paid_to,
         'Amount (BDT)': e.amount,
-        'Attachment': e.attachment || 'None'
+        'Attachment URL': e.attachment_url || 'None'
       }));
 
       const ws = XLSX.utils.json_to_sheet(dataToExport);
@@ -456,8 +537,6 @@
       XLSX.utils.book_append_sheet(wb, ws, "Expenses");
       XLSX.writeFile(wb, "DCCDM_Expense_Register.xlsx");
     }
-
-    init();
   </script>
 </body>
 </html>
