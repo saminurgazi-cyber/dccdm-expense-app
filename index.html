@@ -15,8 +15,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
-    /* Neon Green & Neon Magenta Theme Custom Styles */
+    /* High-Contrast Neon & Magenta Theme Custom Styles */
     .bg-neon { background-color: #00ff66; }
     .text-neon { color: #00ff66; }
     .border-neon { border-color: #00ff66; }
@@ -42,7 +43,7 @@
       left: -20%;
       width: 140%;
       height: 140%;
-      background: radial-gradient(circle at 50% 50%, rgba(255, 0, 127, 0.15), rgba(0, 255, 102, 0.05), transparent 60%);
+      background: radial-gradient(circle at 50% 50%, rgba(255, 0, 127, 0.18), rgba(0, 255, 102, 0.05), transparent 60%);
       z-index: -1;
       animation: neonGlow 8s infinite alternate ease-in-out;
       pointer-events: none;
@@ -54,16 +55,17 @@
       100% { transform: scale(1.05) translate(20px, -15px); opacity: 0.7; }
     }
 
-    /* Style for high-contrast Select / Dropdown options */
+    /* Style for clear high-contrast Select Dropdown options */
     select option {
-      background-color: #09090b;
-      color: #ffffff;
-      padding: 8px;
+      background-color: #09090b !important;
+      color: #ffffff !important;
+      padding: 10px;
     }
 
-    /* Input Calendar Picker styling */
+    /* Date and Month Input Calendar Styling */
     input[type="date"], input[type="month"] {
       cursor: pointer;
+      color-scheme: dark;
     }
   </style>
 </head>
@@ -155,9 +157,9 @@
 
         <form id="expenseForm" onsubmit="saveExpense(event)" class="space-y-3">
           <div>
-            <label class="block text-xs font-bold text-neon mb-1">Expense Date (সিলেক্ট করুন)</label>
-            <!-- Typing Disabled completely: onkeydown & onkeypress return false; clicking opens date picker -->
-            <input type="date" id="expenseDate" required onkeydown="return false;" onkeypress="return false;" onclick="this.showPicker()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon">
+            <label class="block text-xs font-bold text-neon mb-1">Expense Date (ক্যালেন্ডার থেকে বেছে নিন)</label>
+            <!-- Strict Typing Block: Keyboard inputs disabled; opens picker on click -->
+            <input type="date" id="expenseDate" required readonly onclick="this.showPicker()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon">
           </div>
 
           <div>
@@ -228,7 +230,8 @@
           </div>
           <div>
              <label class="block text-[10px] uppercase font-bold text-neon mb-1">Select Month</label>
-             <input type="month" id="monthPicker" onchange="renderTable()" onkeydown="return false;" onkeypress="return false;" onclick="this.showPicker()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon">
+             <!-- Readonly Input to prevent manual typing -->
+             <input type="month" id="monthPicker" onchange="renderTable()" readonly onclick="this.showPicker()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon">
           </div>
           <div>
              <label class="block text-[10px] uppercase font-bold text-zinc-400 mb-1">Search</label>
