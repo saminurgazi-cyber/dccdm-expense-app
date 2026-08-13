@@ -29,7 +29,6 @@
     .border-magenta { border-color: #ff007f; }
     .shadow-magenta { box-shadow: 0 0 15px rgba(255, 0, 127, 0.4); }
 
-    /* Animated Neon Magenta Background Effect */
     body {
       background: #050505;
       position: relative;
@@ -55,7 +54,6 @@
       100% { transform: scale(1.05) translate(20px, -15px); opacity: 0.7; }
     }
 
-    /* Option styling for Dropdowns */
     select option {
       background-color: #09090b !important;
       color: #00ff66 !important;
@@ -63,7 +61,6 @@
       padding: 10px;
     }
 
-    /* Highlighted Custom Arrow for Dropdowns */
     .custom-select {
       appearance: none;
       -webkit-appearance: none;
@@ -75,7 +72,6 @@
       padding-right: 2.5rem !important;
     }
 
-    /* Hidden Native Pickers */
     .hidden-picker {
       position: absolute;
       width: 1px;
@@ -212,8 +208,8 @@
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-zinc-400 mb-1">Voucher Attachment (Photo/PDF)</label>
-            <input type="file" id="attachmentFile" accept="image/*,application/pdf" class="w-full text-xs text-zinc-400 border border-zinc-700 rounded-lg p-1.5 bg-zinc-950">
+            <label class="block text-xs font-medium text-zinc-400 mb-1">Upload Manual Voucher (Photo / PDF / Excel)</label>
+            <input type="file" id="attachmentFile" accept="image/*,application/pdf,.xlsx,.xls" class="w-full text-xs text-zinc-400 border border-zinc-700 rounded-lg p-1.5 bg-zinc-950">
           </div>
 
           <button type="submit" id="saveVoucherBtn" class="w-full bg-neon text-black font-bold py-2.5 rounded-lg text-xs transition hover-bg-neon shadow-neon flex items-center justify-center gap-2">
@@ -524,7 +520,7 @@
     }
 
     async function logout() {
-      if (_supabase) await _supabase.auth.signOut();
+      if (_supabase) await _supabase.signOut();
       currentUser = null; userProfile = null; expenses = []; updateUI();
     }
 
@@ -532,56 +528,6 @@
       const year = new Date().getFullYear();
       const count = expenses.length + 1;
       document.getElementById('nextVoucherIdBadge').innerText = `DCCDM-${year}-${String(count).padStart(4, '0')}`;
-    }
-
-    // Function to process uploaded voucher receipt image and automatically stamp Voucher ID on top right
-    async function stampVoucherIdOnImage(file, voucherId) {
-      return new Promise((resolve) => {
-        if (!file.type.startsWith('image/')) {
-          resolve(file); // If PDF, return original file
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width;
-            canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-
-            // Draw Original Receipt Image
-            ctx.drawImage(img, 0, 0);
-
-            // Draw Auto Voucher ID Watermark Badge at Top Right
-            const text = `DCCDM OFFICIAL RECEIPT | VOUCHER: ${voucherId}`;
-            ctx.font = 'bold ' + Math.max(16, Math.floor(img.width * 0.025)) + 'px sans-serif';
-            const textWidth = ctx.measureText(text).width;
-            const padding = 12;
-            const rectX = canvas.width - textWidth - (padding * 2) - 20;
-            const rectY = 20;
-            const rectWidth = textWidth + (padding * 2);
-            const rectHeight = Math.max(28, Math.floor(img.width * 0.04));
-
-            ctx.fillStyle = 'rgba(5, 5, 5, 0.85)';
-            ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
-            ctx.strokeStyle = '#00ff66';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(rectX, rectY, rectWidth, rectHeight);
-
-            ctx.fillStyle = '#00ff66';
-            ctx.fillText(text, rectX + padding, rectY + rectHeight - (padding / 2) - 2);
-
-            canvas.toBlob((blob) => {
-              const stampedFile = new File([blob], `stamped_${file.name}`, { type: 'image/jpeg' });
-              resolve(stampedFile);
-            }, 'image/jpeg', 0.92);
-          };
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
     }
 
     async function saveExpense(e) {
@@ -593,6 +539,7 @@
       const paid_to = document.getElementById('paidTo').value.trim();
       const fileInput = document.getElementById('attachmentFile');
 
+      let attachment_url = null;
       document.getElementById('saveVoucherBtn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
       document.getElementById('saveVoucherBtn').disabled = true;
 
@@ -600,14 +547,8 @@
       const random4Digit = Math.floor(1000 + Math.random() * 9000);
       const voucher_id = `DCCDM-${year}-${random4Digit}`;
 
-      let attachment_url = null;
-
       if (fileInput.files.length > 0 && _supabase) {
         let file = fileInput.files[0];
-        
-        // Auto-stamp Voucher ID on receipt image before uploading
-        file = await stampVoucherIdOnImage(file, voucher_id);
-
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}_${voucher_id}.${fileExt}`;
         
@@ -709,8 +650,8 @@
                   <i class="fa-solid fa-print"></i>
                 </button>
                 ${item.attachment_url ? `
-                  <a href="${item.attachment_url}" target="_blank" title="View / Print / Download Stamped Receipt" class="p-1.5 bg-zinc-800 text-neon rounded hover:bg-zinc-700 transition border border-neon/30">
-                    <i class="fa-solid fa-file-image"></i>
+                  <a href="${item.attachment_url}" target="_blank" download="Voucher_${item.voucher_id}" title="View / Download Manual Uploaded Voucher File" class="p-1.5 bg-zinc-800 text-neon rounded hover:bg-zinc-700 transition border border-neon/30">
+                    <i class="fa-solid fa-file-arrow-down"></i>
                   </a>` : ''
                 }
                 <button onclick="deleteExpense(${item.id}, '${item.voucher_id}')" title="Delete Voucher" class="p-1.5 bg-red-950/80 text-red-400 hover:bg-red-900 border border-red-800 rounded transition">
@@ -773,7 +714,6 @@
 
       const finalY = doc.lastAutoTable.finalY + 25;
 
-      // Digital System Stamp Box
       doc.setDrawColor(0, 150, 80);
       doc.setFillColor(240, 253, 244);
       doc.rect(15, finalY, 180, 16, 'FD');
@@ -787,7 +727,6 @@
       doc.setTextColor(31, 41, 55);
       doc.text(`Verified & System Entered By: ${entryUser} (${entryEmail})`, 19, finalY + 11);
 
-      // Single Line Signature: Only Authorized Approval (Receiver Signature Completely Removed)
       const sigY = finalY + 35;
       doc.setDrawColor(156, 163, 175);
       doc.line(135, sigY, 195, sigY);
@@ -931,7 +870,7 @@
         'Paid To': e.paid_to,
         'Amount (INR)': e.amount,
         'Digital Signature / System Entry By': `${entryUser} (${currentUser?.email || 'N/A'})`,
-        'Attachment Link': e.attachment_url || 'No File'
+        'Attachment File Link': e.attachment_url || 'No File Attached'
       }));
 
       const ws = XLSX.utils.json_to_sheet(dataToExport);
