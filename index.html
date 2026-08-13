@@ -7,6 +7,7 @@
   
   <!-- Website Favicon Icon -->
   <link rel="icon" type="image/jpeg" href="https://vtzcwmqiyuqmzgwctuut.supabase.co/storage/v1/object/public/vouchers/logo.jpg">
+  <link rel="manifest" href="./manifest.json">
   
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -20,11 +21,12 @@
     .text-neon { color: #00ff66; }
     .border-neon { border-color: #00ff66; }
     .hover-bg-neon:hover { background-color: #00cc52; }
-    .shadow-neon { box-shadow: 0 0 15px rgba(0, 255, 102, 0.3); }
-    .focus-neon:focus { outline: none; border-color: #00ff66; box-shadow: 0 0 8px rgba(0, 255, 102, 0.5); }
+    .shadow-neon { box-shadow: 0 0 15px rgba(0, 255, 102, 0.4); }
+    .focus-neon:focus { outline: none; border-color: #00ff66; box-shadow: 0 0 12px rgba(0, 255, 102, 0.6); }
 
     .text-magenta { color: #ff007f; }
     .border-magenta { border-color: #ff007f; }
+    .shadow-magenta { box-shadow: 0 0 15px rgba(255, 0, 127, 0.4); }
 
     /* Animated Neon Magenta Background Effect */
     body {
@@ -51,6 +53,11 @@
       50% { transform: scale(1.1) translate(-20px, 15px); opacity: 0.9; }
       100% { transform: scale(1.05) translate(20px, -15px); opacity: 0.7; }
     }
+
+    /* Input Calendar Picker pointer cursor */
+    input[type="date"], input[type="month"] {
+      cursor: pointer;
+    }
   </style>
 </head>
 <body class="bg-black text-slate-200 min-h-screen font-sans antialiased">
@@ -59,7 +66,6 @@
   <header class="bg-zinc-950/90 backdrop-blur text-white border-b border-zinc-800 shadow-lg sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
       <div class="flex items-center gap-3 text-center md:text-left">
-        <!-- Logo Image in Header -->
         <img id="headerLogoImg" src="" alt="DCCDM Logo" class="w-11 h-11 rounded-full border border-neon p-0.5 bg-black shadow-neon object-contain hidden">
         <div>
           <h1 class="text-base md:text-xl font-bold tracking-tight text-white">DAKSHIN CHANDPUR CHILD DEVELOPMENT MISSION</h1>
@@ -75,7 +81,7 @@
   <!-- Main Container -->
   <main class="max-w-7xl mx-auto px-4 py-6">
 
-    <!-- Auth / Forgot Password Card -->
+    <!-- Auth Card -->
     <div id="authContainer" class="max-w-md mx-auto bg-zinc-900/90 backdrop-blur rounded-xl shadow-neon border border-zinc-800 p-6 my-10">
       <div class="text-center mb-6">
         <img id="authLogoImg" src="" alt="Logo" class="w-16 h-16 rounded-full border border-neon p-0.5 mx-auto mb-3 shadow-neon object-contain hidden">
@@ -83,7 +89,6 @@
         <p id="authSubTitle" class="text-xs text-zinc-400 mt-1">Admin approval is required for login access</p>
       </div>
 
-      <!-- Main Login / Register / Reset Form -->
       <form id="authForm" onsubmit="handleAuth(event)" class="space-y-4">
         <div id="nameGroup" class="hidden">
           <label class="block text-xs font-semibold text-zinc-300 mb-1">Full Name</label>
@@ -143,8 +148,9 @@
 
         <form id="expenseForm" onsubmit="saveExpense(event)" class="space-y-3">
           <div>
-            <label class="block text-xs font-medium text-zinc-400 mb-1">Expense Date</label>
-            <input type="date" id="expenseDate" required class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
+            <label class="block text-xs font-semibold text-neon mb-1">Expense Date (সিলেক্ট করুন)</label>
+            <!-- Date Typing Disabled: onkeydown="return false", Calendar Opens on Click -->
+            <input type="date" id="expenseDate" required onkeydown="return false;" onclick="this.showPicker()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon">
           </div>
 
           <div>
@@ -153,8 +159,8 @@
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-zinc-400 mb-1">Category (খাত)</label>
-            <select id="expenseCategory" required class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
+            <label class="block text-xs font-semibold text-neon mb-1">Category (খাত সিলেক্ট করুন)</label>
+            <select id="expenseCategory" required class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon">
               <option value="Office Supplies">Office Supplies (কাগজ, কলম, ষ্টেশনরী)</option>
               <option value="Travel & Transport">Travel & Transport (যাতায়াত খরচ)</option>
               <option value="Food & Refreshment">Food & Refreshment (আপ্যায়ন)</option>
@@ -194,7 +200,7 @@
             <p class="text-xs text-zinc-400">Filter data, Export Yearly/Monthly PDF & Manage Vouchers</p>
           </div>
           <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            <button onclick="exportYearlyPDF()" class="flex-1 sm:flex-initial text-xs bg-zinc-800 hover:bg-zinc-700 border border-magenta text-magenta px-3 py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 transition">
+            <button onclick="exportYearlyPDF()" class="flex-1 sm:flex-initial text-xs bg-zinc-800 hover:bg-zinc-700 border border-magenta text-magenta px-3 py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 transition shadow-magenta">
               <i class="fa-solid fa-calendar-days"></i> Yearly PDF
             </button>
             <button onclick="exportMonthlyPDF()" class="flex-1 sm:flex-initial text-xs bg-zinc-800 hover:bg-zinc-700 border border-red-500/50 text-red-400 px-3 py-2 rounded-lg font-medium flex items-center justify-center gap-1.5 transition">
@@ -206,23 +212,25 @@
           </div>
         </div>
 
+        <!-- Highlighted Dropdowns & Filter Bar -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <div>
-             <label class="block text-[10px] uppercase font-bold text-zinc-400 mb-1">Select Year</label>
-             <select id="yearPicker" onchange="renderTable()" class="w-full text-xs p-2 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
+             <label class="block text-[10px] uppercase font-bold text-neon mb-1">Select Year</label>
+             <select id="yearPicker" onchange="renderTable()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon">
              </select>
           </div>
           <div>
-             <label class="block text-[10px] uppercase font-bold text-zinc-400 mb-1">Select Month</label>
-             <input type="month" id="monthPicker" onchange="renderTable()" class="w-full text-xs p-2 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
+             <label class="block text-[10px] uppercase font-bold text-neon mb-1">Select Month</label>
+             <!-- Typing Disabled for Month Input -->
+             <input type="month" id="monthPicker" onchange="renderTable()" onkeydown="return false;" onclick="this.showPicker()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon">
           </div>
           <div>
              <label class="block text-[10px] uppercase font-bold text-zinc-400 mb-1">Search</label>
-             <input type="text" id="searchInput" oninput="renderTable()" placeholder="Voucher ID, Staff, Vendor..." class="w-full text-xs p-2 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
+             <input type="text" id="searchInput" oninput="renderTable()" placeholder="Voucher ID, Staff..." class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
           </div>
           <div>
-             <label class="block text-[10px] uppercase font-bold text-zinc-400 mb-1">Category</label>
-             <select id="filterCategory" onchange="renderTable()" class="w-full text-xs p-2 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
+             <label class="block text-[10px] uppercase font-bold text-neon mb-1">Category</label>
+             <select id="filterCategory" onchange="renderTable()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon">
                 <option value="ALL">All Categories</option>
                 <option value="Office Supplies">Office Supplies</option>
                 <option value="Travel & Transport">Travel & Transport</option>
@@ -287,7 +295,6 @@
       yearPicker.innerHTML += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
     }
 
-    // Load Logo dynamically from Supabase storage or placeholder SVG
     async function loadLogo() {
       const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/vouchers/logo.jpg`;
       try {
@@ -309,7 +316,6 @@
     }
 
     function useFallbackLogo() {
-      // Inline Green Tree Seal SVG converted to Base64
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="#000" stroke="#00ff66" stroke-width="4"/><text x="50" y="20" font-size="8" font-weight="bold" fill="#00ff66" text-anchor="middle">DAKSHIN CHANDPUR</text><text x="50" y="88" font-size="8" font-weight="bold" fill="#00ff66" text-anchor="middle">CHILD DEV MISSION</text><path d="M50 30 C35 30 30 45 40 55 C30 60 35 75 50 75 C65 75 70 60 60 55 C70 45 65 30 50 30 Z" fill="#00ff66"/></svg>`;
       logoDataUrl = 'data:image/svg+xml;base64,' + btoa(svg);
       showLogoImages(logoDataUrl);
@@ -599,7 +605,6 @@
       document.getElementById('totalAmountCell').innerText = '₹ ' + total.toFixed(2);
     }
 
-    // Export Single Voucher with Organization Logo embedded
     function exportSinglePDF(voucherId) {
       const item = expenses.find(e => e.voucher_id === voucherId);
       if (!item) return;
@@ -653,7 +658,6 @@
       doc.save(`${item.voucher_id}.pdf`);
     }
 
-    // Export Yearly Report with Organization Logo
     function exportYearlyPDF() {
       const yearVal = document.getElementById('yearPicker').value;
       if (yearVal === 'ALL') return alert("Please select a specific year from the Year dropdown first!");
@@ -714,7 +718,6 @@
       doc.save(`DCCDM_Annual_Report_${yearVal}.pdf`);
     }
 
-    // Export Monthly Report with Organization Logo
     function exportMonthlyPDF() {
       const monthVal = document.getElementById('monthPicker').value;
       if (!monthVal) return alert("Please select a month first!");
