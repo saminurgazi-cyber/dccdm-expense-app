@@ -17,19 +17,16 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    /* High-Contrast Theme Styles */
     .bg-neon { background-color: #00ff66; }
     .text-neon { color: #00ff66; }
     .border-neon { border-color: #00ff66; }
     .hover-bg-neon:hover { background-color: #00cc52; }
     .shadow-neon { box-shadow: 0 0 15px rgba(0, 255, 102, 0.4); }
-    .focus-neon:focus { outline: none; border-color: #00ff66; box-shadow: 0 0 12px rgba(0, 255, 102, 0.6); }
 
     .text-magenta { color: #ff007f; }
     .border-magenta { border-color: #ff007f; }
     .shadow-magenta { box-shadow: 0 0 15px rgba(255, 0, 127, 0.4); }
 
-    /* Animated Neon Magenta Background Effect */
     body {
       background: #050505;
       position: relative;
@@ -55,7 +52,6 @@
       100% { transform: scale(1.05) translate(20px, -15px); opacity: 0.7; }
     }
 
-    /* Option styling for Dropdowns */
     select option {
       background-color: #09090b !important;
       color: #00ff66 !important;
@@ -63,25 +59,24 @@
       padding: 10px;
     }
 
-    /* Highlighted Custom Arrow for Dropdowns */
+    /* Highly Visible Custom Neon Arrow for Dropdowns */
     .custom-select {
-      appearance: none;
-      -webkit-appearance: none;
-      -moz-appearance: none;
-      background-image: url("data:image/svg+xml;utf8,<svg fill='%2300ff66' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
-      background-repeat: no-repeat;
-      background-position: right 0.75rem center;
-      background-size: 1.5rem;
+      appearance: none !important;
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+      background-image: url("data:image/svg+xml;utf8,<svg fill='%2300ff66' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>") !important;
+      background-repeat: no-repeat !important;
+      background-position: right 0.75rem center !important;
+      background-size: 1.5rem !important;
       padding-right: 2.5rem !important;
     }
 
-    /* Hidden Native Pickers triggered via buttons */
     .hidden-picker {
       position: absolute;
+      width: 1px;
+      height: 1px;
       opacity: 0;
-      width: 0;
-      height: 0;
-      pointer-events: none;
+      pointer-events: auto;
     }
   </style>
 </head>
@@ -117,12 +112,12 @@
       <form id="authForm" onsubmit="handleAuth(event)" class="space-y-4">
         <div id="nameGroup" class="hidden">
           <label class="block text-xs font-semibold text-zinc-300 mb-1">Full Name</label>
-          <input type="text" id="authName" placeholder="Enter full name" class="w-full text-sm px-3 py-2 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
+          <input type="text" id="authName" placeholder="Enter full name" class="w-full text-sm px-3 py-2 bg-zinc-950 border border-zinc-700 text-white rounded-lg outline-none focus:border-neon">
         </div>
         
         <div>
           <label class="block text-xs font-semibold text-zinc-300 mb-1">Email Address</label>
-          <input type="email" id="authEmail" required placeholder="user@dccdm.org" class="w-full text-sm px-3 py-2 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
+          <input type="email" id="authEmail" required placeholder="user@dccdm.org" class="w-full text-sm px-3 py-2 bg-zinc-950 border border-zinc-700 text-white rounded-lg outline-none focus:border-neon">
         </div>
         
         <div id="passwordGroup">
@@ -130,7 +125,7 @@
             <label class="block text-xs font-semibold text-zinc-300">Password</label>
             <button type="button" onclick="switchAuthMode('forgot')" id="forgotLink" class="text-[11px] text-neon hover:underline">Forgot Password?</button>
           </div>
-          <input type="password" id="authPassword" placeholder="••••••••" class="w-full text-sm px-3 py-2 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
+          <input type="password" id="authPassword" placeholder="••••••••" class="w-full text-sm px-3 py-2 bg-zinc-950 border border-zinc-700 text-white rounded-lg outline-none focus:border-neon">
         </div>
 
         <button type="submit" id="authSubmitBtn" class="w-full bg-neon text-black font-bold py-2.5 rounded-lg text-sm transition hover-bg-neon shadow-neon">
@@ -173,25 +168,24 @@
 
         <form id="expenseForm" onsubmit="saveExpense(event)" class="space-y-3">
           <div>
-            <label class="block text-xs font-bold text-neon mb-1">Expense Date (ক্যালেন্ডার বাটন চাপুন)</label>
-            <!-- Hidden Native Picker & Pure White Highlighted Button -->
+            <label class="block text-xs font-bold text-neon mb-1">Expense Date (ক্যালেন্ডার সিলেক্ট করুন)</label>
             <input type="date" id="expenseDate" required class="hidden-picker">
-            <div onclick="openPicker('expenseDate')" class="flex items-center justify-between bg-zinc-950 border-2 border-neon p-1.5 rounded-lg shadow-neon cursor-pointer">
-              <span id="expenseDateDisplay" class="text-xs font-bold text-white pl-2">YYYY-MM-DD</span>
-              <button type="button" class="bg-white text-black font-extrabold px-3 py-1.5 rounded text-xs flex items-center gap-1.5 shadow-md hover:bg-zinc-200 transition">
-                <i class="fa-solid fa-calendar-days text-sm text-black"></i> Select
+            <div onclick="openPicker('expenseDate')" class="flex items-center justify-between bg-zinc-950 border-2 border-neon p-2 rounded-lg shadow-neon cursor-pointer">
+              <span id="expenseDateDisplay" class="text-xs font-bold text-neon pl-1">YYYY-MM-DD</span>
+              <button type="button" class="bg-white text-black font-extrabold px-3 py-1.5 rounded text-xs flex items-center gap-1.5 shadow-md hover:bg-slate-200 transition">
+                <i class="fa-solid fa-calendar-days text-sm text-black"></i> Select Date
               </button>
             </div>
           </div>
 
           <div>
             <label class="block text-xs font-medium text-zinc-400 mb-1">Amount (INR / ₹)</label>
-            <input type="number" step="0.01" id="expenseAmount" required placeholder="0.00" class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-neon font-bold text-sm rounded-lg focus-neon">
+            <input type="number" step="0.01" id="expenseAmount" required placeholder="0.00" class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-neon font-bold text-sm rounded-lg outline-none focus:border-neon">
           </div>
 
           <div>
             <label class="block text-xs font-bold text-neon mb-1">Category (খাত সিলেক্ট করুন)</label>
-            <select id="expenseCategory" required class="custom-select w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
+            <select id="expenseCategory" required class="custom-select w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg shadow-neon cursor-pointer outline-none">
               <option value="Office Supplies">Office Supplies (কাগজ, কলম, ষ্টেশনরী)</option>
               <option value="Travel & Transport">Travel & Transport (যাতায়াত খরচ)</option>
               <option value="Food & Refreshment">Food & Refreshment (আপ্যায়ন)</option>
@@ -204,12 +198,12 @@
 
           <div>
             <label class="block text-xs font-medium text-zinc-400 mb-1">Spent By (কার দ্বারা খরচ হলো)</label>
-            <input type="text" id="spentBy" required placeholder="Staff Name" class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
+            <input type="text" id="spentBy" required placeholder="Staff Name" class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg outline-none focus:border-neon">
           </div>
 
           <div>
             <label class="block text-xs font-medium text-zinc-400 mb-1">Paid To (কাকে পেমেন্ট করা হলো)</label>
-            <input type="text" id="paidTo" required placeholder="Vendor or Person Name" class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
+            <input type="text" id="paidTo" required placeholder="Vendor or Person Name" class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg outline-none focus:border-neon">
           </div>
 
           <div>
@@ -243,30 +237,30 @@
           </div>
         </div>
 
-        <!-- Highlighted Dropdowns & Pure White Month Button -->
+        <!-- Highlighted Dropdowns -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <div>
              <label class="block text-[10px] uppercase font-bold text-neon mb-1">Select Year</label>
-             <select id="yearPicker" onchange="renderTable()" class="custom-select w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
+             <select id="yearPicker" onchange="renderTable()" class="custom-select w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg shadow-neon cursor-pointer outline-none">
              </select>
           </div>
           <div>
              <label class="block text-[10px] uppercase font-bold text-neon mb-1">Select Month</label>
              <input type="month" id="monthPicker" onchange="updateMonthDisplay(); renderTable();" class="hidden-picker">
-             <div onclick="openPicker('monthPicker')" class="flex items-center justify-between bg-zinc-950 border-2 border-neon p-1.5 rounded-lg shadow-neon cursor-pointer">
-               <span id="monthPickerDisplay" class="text-xs font-bold text-white pl-2">YYYY-MM</span>
-               <button type="button" class="bg-white text-black font-extrabold px-2 py-1 rounded text-xs flex items-center gap-1 hover:bg-zinc-200 transition">
+             <div onclick="openPicker('monthPicker')" class="flex items-center justify-between bg-zinc-950 border-2 border-neon p-2 rounded-lg shadow-neon cursor-pointer">
+               <span id="monthPickerDisplay" class="text-xs font-bold text-neon pl-1">YYYY-MM</span>
+               <button type="button" class="bg-white text-black font-extrabold px-2.5 py-1 rounded text-xs flex items-center gap-1 hover:bg-slate-200 transition">
                  <i class="fa-solid fa-calendar text-black"></i> Select
                </button>
              </div>
           </div>
           <div>
              <label class="block text-[10px] uppercase font-bold text-zinc-400 mb-1">Search</label>
-             <input type="text" id="searchInput" oninput="renderTable()" placeholder="Voucher ID, Staff..." class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
+             <input type="text" id="searchInput" oninput="renderTable()" placeholder="Voucher ID, Staff..." class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg outline-none focus:border-neon">
           </div>
           <div>
              <label class="block text-[10px] uppercase font-bold text-neon mb-1">Category</label>
-             <select id="filterCategory" onchange="renderTable()" class="custom-select w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
+             <select id="filterCategory" onchange="renderTable()" class="custom-select w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg shadow-neon cursor-pointer outline-none">
                 <option value="ALL">All Categories</option>
                 <option value="Office Supplies">Office Supplies</option>
                 <option value="Travel & Transport">Travel & Transport</option>
