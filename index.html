@@ -55,7 +55,7 @@
       100% { transform: scale(1.05) translate(20px, -15px); opacity: 0.7; }
     }
 
-    /* Clear Option Styling inside Dropdowns */
+    /* Option styling for Dropdowns */
     select option {
       background-color: #09090b !important;
       color: #00ff66 !important;
@@ -63,7 +63,7 @@
       padding: 10px;
     }
 
-    /* Highly Visible Custom Neon Arrow for Dropdowns */
+    /* Highlighted Custom Arrow for Dropdowns */
     .custom-select {
       appearance: none;
       -webkit-appearance: none;
@@ -75,9 +75,8 @@
       padding-right: 2.5rem !important;
     }
 
-    /* Date and Month Input Calendar Styling */
+    /* Input Calendar Cursor */
     input[type="date"], input[type="month"] {
-      cursor: pointer;
       color-scheme: dark;
     }
   </style>
@@ -170,11 +169,13 @@
 
         <form id="expenseForm" onsubmit="saveExpense(event)" class="space-y-3">
           <div>
-            <label class="block text-xs font-bold text-neon mb-1">Expense Date (ক্যালেন্ডার থেকে বেছে নিন)</label>
-            <!-- Date Field Strictly Non-Editable; Clicking Open Calendar -->
-            <div class="relative flex items-center cursor-pointer" onclick="triggerDatePicker('expenseDate')">
-              <input type="date" id="expenseDate" required onkeydown="return false;" onfocus="this.showPicker()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
-              <i class="fa-solid fa-calendar-days text-neon absolute right-3 pointer-events-none"></i>
+            <label class="block text-xs font-bold text-neon mb-1">Expense Date (ক্যালেন্ডার বাটন চাপুন)</label>
+            <!-- Highlighted Calendar Box with Non-Editable Date Field -->
+            <div class="relative flex items-center bg-zinc-950 border-2 border-neon rounded-lg shadow-neon cursor-pointer p-1" onclick="triggerDatePicker('expenseDate')">
+              <input type="date" id="expenseDate" required readonly onkeydown="return false;" tabindex="-1" class="w-full text-xs p-1.5 bg-transparent text-white font-bold outline-none cursor-pointer pointer-events-none">
+              <button type="button" class="bg-neon text-black px-3 py-1.5 rounded font-bold text-xs flex items-center gap-1 hover-bg-neon transition shadow-sm ml-1">
+                <i class="fa-solid fa-calendar-days text-sm"></i>
+              </button>
             </div>
           </div>
 
@@ -237,7 +238,7 @@
           </div>
         </div>
 
-        <!-- Highlighted Dropdowns & Custom Arrows -->
+        <!-- Highlighted Dropdowns & Filter Controls -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <div>
              <label class="block text-[10px] uppercase font-bold text-neon mb-1">Select Year</label>
@@ -246,9 +247,11 @@
           </div>
           <div>
              <label class="block text-[10px] uppercase font-bold text-neon mb-1">Select Month</label>
-             <div class="relative flex items-center cursor-pointer" onclick="triggerDatePicker('monthPicker')">
-               <input type="month" id="monthPicker" onchange="renderTable()" onkeydown="return false;" onfocus="this.showPicker()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
-               <i class="fa-solid fa-calendar text-neon absolute right-3 pointer-events-none"></i>
+             <div class="relative flex items-center bg-zinc-950 border-2 border-neon rounded-lg shadow-neon cursor-pointer p-1" onclick="triggerDatePicker('monthPicker')">
+               <input type="month" id="monthPicker" onchange="renderTable()" readonly onkeydown="return false;" tabindex="-1" class="w-full text-xs p-1 bg-transparent text-white font-bold outline-none cursor-pointer pointer-events-none">
+               <button type="button" class="bg-neon text-black px-2 py-1 rounded font-bold text-xs hover-bg-neon transition shadow-sm ml-1">
+                 <i class="fa-solid fa-calendar"></i>
+               </button>
              </div>
           </div>
           <div>
