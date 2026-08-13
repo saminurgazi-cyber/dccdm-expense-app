@@ -55,22 +55,23 @@
       100% { transform: scale(1.05) translate(20px, -15px); opacity: 0.7; }
     }
 
-    /* Style for clear high-contrast Select Dropdown options */
+    /* Clear Option Styling inside Dropdowns */
     select option {
       background-color: #09090b !important;
-      color: #ffffff !important;
+      color: #00ff66 !important;
+      font-weight: bold;
       padding: 10px;
     }
 
-    /* Custom Dropdown Styling for Visible Arrow */
-    select {
+    /* Highly Visible Custom Neon Arrow for Dropdowns */
+    .custom-select {
       appearance: none;
       -webkit-appearance: none;
       -moz-appearance: none;
-      background-image: url('data:image/svg+xml;utf8,<svg fill="%2300ff66" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+      background-image: url("data:image/svg+xml;utf8,<svg fill='%2300ff66' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
       background-repeat: no-repeat;
-      background-position: right 0.7rem center;
-      background-size: 1.2rem;
+      background-position: right 0.75rem center;
+      background-size: 1.5rem;
       padding-right: 2.5rem !important;
     }
 
@@ -170,9 +171,10 @@
         <form id="expenseForm" onsubmit="saveExpense(event)" class="space-y-3">
           <div>
             <label class="block text-xs font-bold text-neon mb-1">Expense Date (ক্যালেন্ডার থেকে বেছে নিন)</label>
-            <!-- Strict Keyboard Typing Block: Non-editable and click opens native calendar -->
-            <div class="relative cursor-pointer" onclick="document.getElementById('expenseDate').showPicker()">
-              <input type="date" id="expenseDate" required readonly onkeydown="return false;" onfocus="this.showPicker()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
+            <!-- Date Field Strictly Non-Editable; Clicking Open Calendar -->
+            <div class="relative flex items-center cursor-pointer" onclick="triggerDatePicker('expenseDate')">
+              <input type="date" id="expenseDate" required onkeydown="return false;" onfocus="this.showPicker()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
+              <i class="fa-solid fa-calendar-days text-neon absolute right-3 pointer-events-none"></i>
             </div>
           </div>
 
@@ -183,7 +185,7 @@
 
           <div>
             <label class="block text-xs font-bold text-neon mb-1">Category (খাত সিলেক্ট করুন)</label>
-            <select id="expenseCategory" required class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
+            <select id="expenseCategory" required class="custom-select w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
               <option value="Office Supplies">Office Supplies (কাগজ, কলম, ষ্টেশনরী)</option>
               <option value="Travel & Transport">Travel & Transport (যাতায়াত খরচ)</option>
               <option value="Food & Refreshment">Food & Refreshment (আপ্যায়ন)</option>
@@ -235,17 +237,18 @@
           </div>
         </div>
 
-        <!-- High-Visibility Highlighted Dropdowns with Arrow Support -->
+        <!-- Highlighted Dropdowns & Custom Arrows -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <div>
              <label class="block text-[10px] uppercase font-bold text-neon mb-1">Select Year</label>
-             <select id="yearPicker" onchange="renderTable()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
+             <select id="yearPicker" onchange="renderTable()" class="custom-select w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
              </select>
           </div>
           <div>
              <label class="block text-[10px] uppercase font-bold text-neon mb-1">Select Month</label>
-             <div class="relative cursor-pointer" onclick="document.getElementById('monthPicker').showPicker()">
-               <input type="month" id="monthPicker" onchange="renderTable()" readonly onfocus="this.showPicker()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
+             <div class="relative flex items-center cursor-pointer" onclick="triggerDatePicker('monthPicker')">
+               <input type="month" id="monthPicker" onchange="renderTable()" onkeydown="return false;" onfocus="this.showPicker()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
+               <i class="fa-solid fa-calendar text-neon absolute right-3 pointer-events-none"></i>
              </div>
           </div>
           <div>
@@ -254,7 +257,7 @@
           </div>
           <div>
              <label class="block text-[10px] uppercase font-bold text-neon mb-1">Category</label>
-             <select id="filterCategory" onchange="renderTable()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
+             <select id="filterCategory" onchange="renderTable()" class="custom-select w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
                 <option value="ALL">All Categories</option>
                 <option value="Office Supplies">Office Supplies</option>
                 <option value="Travel & Transport">Travel & Transport</option>
@@ -317,6 +320,13 @@
     yearPicker.innerHTML = `<option value="ALL">All Years</option>`;
     for (let y = currentYear; y >= currentYear - 5; y--) {
       yearPicker.innerHTML += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
+    }
+
+    function triggerDatePicker(id) {
+      const el = document.getElementById(id);
+      if (el && el.showPicker) {
+        try { el.showPicker(); } catch(e) { el.focus(); }
+      }
     }
 
     async function loadLogo() {
