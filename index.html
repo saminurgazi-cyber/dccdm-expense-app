@@ -203,7 +203,6 @@
 
           <div>
             <label class="block text-xs font-medium text-zinc-400 mb-1">Spent By (কার দ্বারা খরচ হলো - ম্যানুয়ালি লিখুন)</label>
-            <!-- Manually editable field for who spent/paid the money -->
             <input type="text" id="spentBy" required placeholder="Enter Person Name Who Spent" class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
           </div>
 
@@ -307,7 +306,6 @@
   </main>
 
   <script>
-    // SUPABASE CONFIGURATION
     const SUPABASE_URL = 'https://vtzcwmqiyuqmzgwctuut.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0emN3bXFpeXVxbXpnd2N0dXV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMDA3NTAsImV4cCI6MjEwMTc3Njc1MH0.VC8xy-Rfxva1oY8vW4WXpE1YSPspx2aYdh110SZiE2k'; 
 
@@ -416,7 +414,8 @@
 
     async function loadExpensesFromSupabase() {
       if (!_supabase) return;
-      const { data } = await _supabase.from('expenses').select('*, profiles:created_by(full_name, email)').order('created_at', { ascending: false });
+      // Load expenses without broken relation error
+      const { data, error } = await _supabase.from('expenses').select('*').order('created_at', { ascending: false });
       if (data) expenses = data;
     }
 
@@ -561,19 +560,28 @@
         }
       }
 
+      // Unique Voucher ID generated in frontend to prevent DB trigger block
+      const year = new Date().getFullYear();
+      const random4Digit = Math.floor(1000 + Math.random() * 9000);
+      const voucher_id = `DCCDM-${year}-${random4Digit}`;
+
       if (_supabase && currentUser) {
         const { error } = await _supabase.from('expenses').insert([{
-          expense_date, amount, category, spent_by, paid_to, attachment_url, created_by: currentUser.id
+          voucher_id, expense_date, amount, category, spent_by, paid_to, attachment_url, created_by: currentUser.id
         }]);
 
-        if (error) alert("Error: " + error.message);
+        if (error) {
+          alert("Error: " + error.message);
+          document.getElementById('saveVoucherBtn').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Expense Voucher';
+          document.getElementById('saveVoucherBtn').disabled = false;
+          return;
+        }
       }
 
       alert('Voucher Saved Successfully!');
       document.getElementById('expenseForm').reset();
       document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
       document.getElementById('expenseDateDisplay').innerText = new Date().toISOString().split('T')[0];
-      
       document.getElementById('saveVoucherBtn').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Expense Voucher';
       document.getElementById('saveVoucherBtn').disabled = false;
       
@@ -665,7 +673,6 @@
       document.getElementById('totalAmountCell').innerText = '₹ ' + total.toFixed(2);
     }
 
-    // Export Single Voucher with Digital Signature Stamp
     function exportSinglePDF(voucherId) {
       const item = expenses.find(e => e.voucher_id === voucherId);
       if (!item) return;
@@ -679,9 +686,8 @@
         } catch(err) {}
       }
 
-      // Auto-detect Digital Signature Details of Logged-In User
-      const entryUser = item.profiles?.full_name || item.profiles?.email || 'Authorized Staff';
-      const entryEmail = item.profiles?.email || 'user@dccdm.org';
+      const entryUser = userProfile?.full_name || currentUser?.email || 'Authorized Staff';
+      const entryEmail = currentUser?.email || 'user@dccdm.org';
 
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
@@ -714,7 +720,6 @@
 
       const finalY = doc.lastAutoTable.finalY + 25;
 
-      // Digital Signature Badge Box
       doc.setDrawColor(0, 150, 80);
       doc.setFillColor(240, 253, 244);
       doc.rect(15, finalY, 180, 16, 'FD');
@@ -770,9 +775,9 @@
       doc.line(15, 31, 195, 31);
 
       let total = 0;
+      const entryUser = userProfile?.full_name || currentUser?.email || 'Staff';
       const tableBody = filteredData.map((item, index) => {
         total += Number(item.amount);
-        const entryUser = item.profiles?.full_name || item.profiles?.email || 'Staff';
         return [
           index + 1,
           item.expense_date,
@@ -833,9 +838,9 @@
       doc.line(15, 31, 195, 31);
 
       let total = 0;
+      const entryUser = userProfile?.full_name || currentUser?.email || 'Staff';
       const tableBody = filteredData.map((item, index) => {
         total += Number(item.amount);
-        const entryUser = item.profiles?.full_name || item.profiles?.email || 'Staff';
         return [
           index + 1,
           item.expense_date,
@@ -865,6 +870,7 @@
     }
 
     function exportExcel() {
+      const entryUser = userProfile?.full_name || currentUser?.email || 'Staff';
       const dataToExport = expenses.map(e => ({
         'Voucher ID': e.voucher_id,
         'Date': e.expense_date,
@@ -872,7 +878,7 @@
         'Spent By': e.spent_by,
         'Paid To': e.paid_to,
         'Amount (INR)': e.amount,
-        'Digital Signature / Entered By': `${e.profiles?.full_name || 'Staff'} (${e.profiles?.email || 'N/A'})`,
+        'Digital Signature / System Entry By': `${entryUser} (${currentUser?.email || 'N/A'})`,
         'Attachment Link': e.attachment_url || 'No File'
       }));
 
