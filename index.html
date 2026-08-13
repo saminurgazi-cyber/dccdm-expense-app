@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DCCDM - Expense Manager</title>
+  <title>DCCDM Expense Manager</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -11,20 +11,21 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    .bg-neon { background-color: #00ff66; } .text-neon { color: #00ff66; } .border-neon { border-color: #00ff66; }
-    .role-btn-active { background-color: #00ff66 !important; color: #000 !important; font-weight: bold; }
-    body { background: #050505; color: #e4e4e7; }
-    .hidden-picker { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+    body { background: #050505; color: #fff; }
+    .bg-neon { background-color: #00ff66; }
+    .text-neon { color: #00ff66; }
+    .border-neon { border-color: #00ff66; }
+    .active-role { background-color: #00ff66 !important; color: #000 !important; }
   </style>
 </head>
-<body>
-  <div id="app" class="max-w-7xl mx-auto p-4">
-    <!-- Auth Section -->
-    <div id="authBox" class="max-w-md mx-auto bg-zinc-900 p-6 rounded-xl border border-zinc-800 mt-20">
-      <h2 class="text-white text-center font-bold mb-4">Login Portal</h2>
+<body class="p-4">
+  <div class="max-w-6xl mx-auto">
+    <!-- Auth -->
+    <div id="authBox" class="max-w-sm mx-auto bg-zinc-900 p-6 rounded-xl border border-zinc-800 mt-20">
+      <h2 class="text-center font-bold mb-4">Login Portal</h2>
       <div class="grid grid-cols-2 gap-2 bg-zinc-950 p-1 rounded mb-4">
-        <button id="roleStaffBtn" onclick="setRole('staff')" class="role-btn-active py-2 text-xs rounded">Staff</button>
-        <button id="roleAdminBtn" onclick="setRole('admin')" class="py-2 text-xs rounded text-zinc-400">Admin</button>
+        <button id="sBtn" onclick="setRole('staff')" class="active-role py-2 text-xs rounded">Staff</button>
+        <button id="aBtn" onclick="setRole('admin')" class="py-2 text-xs rounded text-zinc-500">Admin</button>
       </div>
       <input type="email" id="email" placeholder="Email" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded mb-2 text-sm">
       <input type="password" id="pass" placeholder="Password" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded mb-4 text-sm">
@@ -32,18 +33,24 @@
     </div>
 
     <!-- Dashboard -->
-    <div id="dashboard" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div id="dash" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
       <div class="bg-zinc-900 p-5 rounded-xl border border-zinc-800">
-        <h3 class="text-white font-bold mb-4">New Entry</h3>
-        <input type="date" id="date" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded mb-2 text-sm">
-        <input type="number" id="amt" placeholder="Amount" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded mb-2 text-sm">
-        <input type="text" id="spent" placeholder="Spent By" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded mb-2 text-sm">
-        <input type="file" id="file" class="w-full p-2 text-xs">
-        <button onclick="save()" class="w-full bg-neon text-black font-bold py-2 rounded mt-2 text-sm">Save</button>
+        <h3 class="font-bold mb-4">New Voucher</h3>
+        <input type="date" id="date" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded mb-2 text-sm text-white">
+        <input type="number" id="amt" placeholder="Amount" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded mb-2 text-sm text-white">
+        <input type="text" id="spent" placeholder="Spent By" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded mb-2 text-sm text-white">
+        <input type="text" id="paid" placeholder="Paid To" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded mb-2 text-sm text-white">
+        <input type="file" id="file" class="w-full text-xs mb-4">
+        <button onclick="save()" class="w-full bg-neon text-black font-bold py-2 rounded text-sm">Save Voucher</button>
+        <button onclick="logout()" class="w-full bg-red-900 text-white py-2 rounded mt-2 text-sm">Logout</button>
       </div>
       <div class="md:col-span-2 bg-zinc-900 p-5 rounded-xl border border-zinc-800">
+        <div class="flex justify-between mb-4">
+          <h3 class="font-bold">Records</h3>
+          <button onclick="exportExcel()" class="bg-green-800 px-3 py-1 text-xs rounded">Download Excel</button>
+        </div>
         <table class="w-full text-left text-xs">
-          <thead><tr class="text-zinc-400"><th class="p-2">ID</th><th>Spent By</th><th>Amount</th><th>Action</th></tr></thead>
+          <thead><tr class="text-zinc-500"><th class="p-2">ID</th><th>Date</th><th>Spent</th><th>Amount</th><th>Action</th></tr></thead>
           <tbody id="tbody"></tbody>
         </table>
       </div>
@@ -52,78 +59,74 @@
 
   <script>
     const supabase = supabase.createClient('https://vtzcwmqiyuqmzgwctuut.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.VC8xy-Rfxva1oY8vW4WXpE1YSPspx2aYdh110SZiE2k');
-    let role = 'staff';
-    let user = null;
+    let role = 'staff', user = null;
 
     function setRole(r) {
       role = r;
-      document.getElementById('roleStaffBtn').classList.toggle('role-btn-active', role === 'staff');
-      document.getElementById('roleAdminBtn').classList.toggle('role-btn-active', role === 'admin');
+      document.getElementById('sBtn').classList.toggle('active-role', role === 'staff');
+      document.getElementById('aBtn').classList.toggle('active-role', role === 'admin');
     }
 
     async function login() {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: document.getElementById('email').value,
-        password: document.getElementById('pass').value
-      });
+      const email = document.getElementById('email').value;
+      const pass = document.getElementById('pass').value;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
       if (error) return alert(error.message);
       
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
-      if (role === 'admin' && profile?.role !== 'admin') return alert("Only Admins allowed!");
+      if (role === 'admin' && profile?.role !== 'admin') return alert("Only Admin allowed!");
       
       user = data.user;
       document.getElementById('authBox').classList.add('hidden');
-      document.getElementById('dashboard').classList.remove('hidden');
+      document.getElementById('dash').classList.remove('hidden');
       loadData();
     }
 
     async function save() {
+      const vId = 'DCCDM-' + Date.now().toString().slice(-6);
       const file = document.getElementById('file').files[0];
       let url = null;
-      const vId = 'DCCDM-' + Date.now().toString().slice(-6);
-      
       if (file) {
         const { data } = await supabase.storage.from('vouchers').upload(`${vId}_${file.name}`, file);
         url = supabase.storage.from('vouchers').getPublicUrl(data.path).data.publicUrl;
       }
-
       await supabase.from('expenses').insert({
-        voucher_id: vId,
-        expense_date: document.getElementById('date').value,
-        amount: document.getElementById('amt').value,
-        spent_by: document.getElementById('spent').value,
-        attachment_url: url,
-        created_by: user.id
+        voucher_id: vId, expense_date: document.getElementById('date').value,
+        amount: document.getElementById('amt').value, spent_by: document.getElementById('spent').value,
+        paid_to: document.getElementById('paid').value, attachment_url: url, created_by: user.id
       });
-      alert("Saved Successfully!");
-      loadData();
+      alert("Saved!"); loadData();
     }
 
     async function loadData() {
       const { data } = await supabase.from('expenses').select('*');
       const tbody = document.getElementById('tbody');
       tbody.innerHTML = '';
-      data.forEach(item => {
+      data.forEach(i => {
         tbody.innerHTML += `
           <tr class="border-t border-zinc-800">
-            <td class="p-2">${item.voucher_id}</td>
-            <td class="p-2">${item.spent_by}</td>
-            <td class="p-2">₹${item.amount}</td>
+            <td class="p-2">${i.voucher_id}</td>
+            <td class="p-2">${i.expense_date}</td>
+            <td class="p-2">${i.spent_by}</td>
+            <td class="p-2">₹${i.amount}</td>
             <td class="p-2">
-              <button onclick="download('${item.attachment_url}')" class="text-blue-400 mr-2"><i class="fa fa-download"></i></button>
-              ${role === 'admin' ? `<button onclick="del(${item.id})" class="text-red-500"><i class="fa fa-trash"></i></button>` : ''}
+              ${i.attachment_url ? `<a href="${i.attachment_url}" target="_blank" class="text-blue-400 mr-2"><i class="fa fa-download"></i></a>` : ''}
+              ${role === 'admin' ? `<button onclick="del(${i.id})" class="text-red-500"><i class="fa fa-trash"></i></button>` : ''}
             </td>
           </tr>
         `;
       });
     }
 
-    async function del(id) {
-      await supabase.from('expenses').delete().eq('id', id);
-      loadData();
-    }
+    async function del(id) { await supabase.from('expenses').delete().eq('id', id); loadData(); }
+    function logout() { supabase.auth.signOut(); location.reload(); }
     
-    function download(url) { window.open(url, '_blank'); }
+    function exportExcel() {
+      const ws = XLSX.utils.json_to_sheet(expenses);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Data");
+      XLSX.writeFile(wb, "Expenses.xlsx");
+    }
   </script>
 </body>
 </html>
