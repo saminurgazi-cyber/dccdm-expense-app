@@ -202,14 +202,14 @@
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-zinc-400 mb-1">Spent By (কে টাকা পেমেন্ট করলো)</label>
-            <!-- Editable field to write who paid the money -->
-            <input type="text" id="spentBy" required placeholder="Name of Person Who Paid" class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
+            <label class="block text-xs font-medium text-zinc-400 mb-1">Spent By (কার দ্বারা খরচ হলো - ম্যানুয়ালি লিখুন)</label>
+            <!-- Manually editable field for who spent/paid the money -->
+            <input type="text" id="spentBy" required placeholder="Enter Person Name Who Spent" class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
           </div>
 
           <div>
             <label class="block text-xs font-medium text-zinc-400 mb-1">Paid To (কাকে পেমেন্ট করা হলো)</label>
-            <input type="text" id="paidTo" required placeholder="Vendor or Receiver Name" class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
+            <input type="text" id="paidTo" required placeholder="Vendor or Person Name" class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
           </div>
 
           <div>
@@ -573,6 +573,7 @@
       document.getElementById('expenseForm').reset();
       document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
       document.getElementById('expenseDateDisplay').innerText = new Date().toISOString().split('T')[0];
+      
       document.getElementById('saveVoucherBtn').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Expense Voucher';
       document.getElementById('saveVoucherBtn').disabled = false;
       
@@ -664,6 +665,7 @@
       document.getElementById('totalAmountCell').innerText = '₹ ' + total.toFixed(2);
     }
 
+    // Export Single Voucher with Digital Signature Stamp
     function exportSinglePDF(voucherId) {
       const item = expenses.find(e => e.voucher_id === voucherId);
       if (!item) return;
@@ -677,8 +679,9 @@
         } catch(err) {}
       }
 
-      // Auto-detected logged-in Entry User Name
-      const entryUser = item.profiles?.full_name || item.profiles?.email || 'Logged Staff';
+      // Auto-detect Digital Signature Details of Logged-In User
+      const entryUser = item.profiles?.full_name || item.profiles?.email || 'Authorized Staff';
+      const entryEmail = item.profiles?.email || 'user@dccdm.org';
 
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
@@ -709,15 +712,26 @@
         styles: { fontSize: 10, cellPadding: 5 }
       });
 
-      const finalY = doc.lastAutoTable.finalY + 30;
-      doc.setFontSize(9);
-      doc.setTextColor(100, 116, 139);
-      doc.text(`System Entry Registered By: ${entryUser}`, 15, finalY);
+      const finalY = doc.lastAutoTable.finalY + 25;
 
-      const sigY = finalY + 25;
+      // Digital Signature Badge Box
+      doc.setDrawColor(0, 150, 80);
+      doc.setFillColor(240, 253, 244);
+      doc.rect(15, finalY, 180, 16, 'FD');
+
+      doc.setFontSize(8.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 120, 60);
+      doc.text('[ DIGITAL SYSTEM STAMP & SIGNATURE ]', 19, finalY + 5);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(31, 41, 55);
+      doc.text(`Verified & System Entered By: ${entryUser} (${entryEmail})`, 19, finalY + 11);
+
+      const sigY = finalY + 35;
       doc.setDrawColor(156, 163, 175);
       doc.line(15, sigY, 65, sigY);
-      doc.text('Receiver / Paid Signature', 18, sigY + 5);
+      doc.text('Receiver Signature', 22, sigY + 5);
 
       doc.line(145, sigY, 195, sigY);
       doc.text('Authorized Approval', 152, sigY + 5);
@@ -777,7 +791,7 @@
 
       doc.autoTable({
         startY: 37,
-        head: [['Sl.', 'Date', 'Voucher ID', 'Category', 'Spent By', 'Entered By', 'Amount (INR)']],
+        head: [['Sl.', 'Date', 'Voucher ID', 'Category', 'Spent By', 'Digital Signature (Entered By)', 'Amount (INR)']],
         body: tableBody,
         headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: 'bold' },
         theme: 'grid',
@@ -840,7 +854,7 @@
 
       doc.autoTable({
         startY: 37,
-        head: [['Sl.', 'Date', 'Voucher ID', 'Category', 'Spent By', 'Entered By', 'Amount (INR)']],
+        head: [['Sl.', 'Date', 'Voucher ID', 'Category', 'Spent By', 'Digital Signature (Entered By)', 'Amount (INR)']],
         body: tableBody,
         headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: 'bold' },
         theme: 'grid',
@@ -858,7 +872,7 @@
         'Spent By': e.spent_by,
         'Paid To': e.paid_to,
         'Amount (INR)': e.amount,
-        'Entered By (Account)': e.profiles?.full_name || e.profiles?.email || 'Staff',
+        'Digital Signature / Entered By': `${e.profiles?.full_name || 'Staff'} (${e.profiles?.email || 'N/A'})`,
         'Attachment Link': e.attachment_url || 'No File'
       }));
 
