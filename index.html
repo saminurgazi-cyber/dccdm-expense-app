@@ -202,7 +202,7 @@
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-zinc-400 mb-1">Spent By (কার দ্বারা খরচ হলো)</label>
+            <label class="block text-xs font-medium text-zinc-400 mb-1">Spent By (কার দ্বারা খরচ হলো - ম্যানুয়ালি লিখুন)</label>
             <input type="text" id="spentBy" required placeholder="Enter Person Name Who Spent" class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
           </div>
 
@@ -534,6 +534,56 @@
       document.getElementById('nextVoucherIdBadge').innerText = `DCCDM-${year}-${String(count).padStart(4, '0')}`;
     }
 
+    // Function to process uploaded voucher receipt image and automatically stamp Voucher ID on top right
+    async function stampVoucherIdOnImage(file, voucherId) {
+      return new Promise((resolve) => {
+        if (!file.type.startsWith('image/')) {
+          resolve(file); // If PDF, return original file
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+
+            // Draw Original Receipt Image
+            ctx.drawImage(img, 0, 0);
+
+            // Draw Auto Voucher ID Watermark Badge at Top Right
+            const text = `DCCDM OFFICIAL RECEIPT | VOUCHER: ${voucherId}`;
+            ctx.font = 'bold ' + Math.max(16, Math.floor(img.width * 0.025)) + 'px sans-serif';
+            const textWidth = ctx.measureText(text).width;
+            const padding = 12;
+            const rectX = canvas.width - textWidth - (padding * 2) - 20;
+            const rectY = 20;
+            const rectWidth = textWidth + (padding * 2);
+            const rectHeight = Math.max(28, Math.floor(img.width * 0.04));
+
+            ctx.fillStyle = 'rgba(5, 5, 5, 0.85)';
+            ctx.fillRect(rectX, rectY, rectWidth, rectHeight);
+            ctx.strokeStyle = '#00ff66';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(rectX, rectY, rectWidth, rectHeight);
+
+            ctx.fillStyle = '#00ff66';
+            ctx.fillText(text, rectX + padding, rectY + rectHeight - (padding / 2) - 2);
+
+            canvas.toBlob((blob) => {
+              const stampedFile = new File([blob], `stamped_${file.name}`, { type: 'image/jpeg' });
+              resolve(stampedFile);
+            }, 'image/jpeg', 0.92);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
     async function saveExpense(e) {
       e.preventDefault();
       const expense_date = document.getElementById('expenseDate').value;
@@ -543,14 +593,23 @@
       const paid_to = document.getElementById('paidTo').value.trim();
       const fileInput = document.getElementById('attachmentFile');
 
-      let attachment_url = null;
       document.getElementById('saveVoucherBtn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
       document.getElementById('saveVoucherBtn').disabled = true;
 
+      const year = new Date().getFullYear();
+      const random4Digit = Math.floor(1000 + Math.random() * 9000);
+      const voucher_id = `DCCDM-${year}-${random4Digit}`;
+
+      let attachment_url = null;
+
       if (fileInput.files.length > 0 && _supabase) {
-        const file = fileInput.files[0];
+        let file = fileInput.files[0];
+        
+        // Auto-stamp Voucher ID on receipt image before uploading
+        file = await stampVoucherIdOnImage(file, voucher_id);
+
         const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
+        const fileName = `${Date.now()}_${voucher_id}.${fileExt}`;
         
         const { error: uploadErr } = await _supabase.storage.from('vouchers').upload(fileName, file);
         if (!uploadErr) {
@@ -558,10 +617,6 @@
           attachment_url = urlData.publicUrl;
         }
       }
-
-      const year = new Date().getFullYear();
-      const random4Digit = Math.floor(1000 + Math.random() * 9000);
-      const voucher_id = `DCCDM-${year}-${random4Digit}`;
 
       if (_supabase && currentUser) {
         const { error } = await _supabase.from('expenses').insert([{
@@ -654,7 +709,7 @@
                   <i class="fa-solid fa-print"></i>
                 </button>
                 ${item.attachment_url ? `
-                  <a href="${item.attachment_url}" target="_blank" title="View / Print / Download Manual Uploaded Receipt" class="p-1.5 bg-zinc-800 text-neon rounded hover:bg-zinc-700 transition border border-neon/30">
+                  <a href="${item.attachment_url}" target="_blank" title="View / Print / Download Stamped Receipt" class="p-1.5 bg-zinc-800 text-neon rounded hover:bg-zinc-700 transition border border-neon/30">
                     <i class="fa-solid fa-file-image"></i>
                   </a>` : ''
                 }
@@ -671,7 +726,6 @@
       document.getElementById('totalAmountCell').innerText = '₹ ' + total.toFixed(2);
     }
 
-    // Export Single Voucher: Only Authorized Approval Signature (Receiver Signature Completely Removed)
     function exportSinglePDF(voucherId) {
       const item = expenses.find(e => e.voucher_id === voucherId);
       if (!item) return;
@@ -719,7 +773,7 @@
 
       const finalY = doc.lastAutoTable.finalY + 25;
 
-      // Digital System Stamp
+      // Digital System Stamp Box
       doc.setDrawColor(0, 150, 80);
       doc.setFillColor(240, 253, 244);
       doc.rect(15, finalY, 180, 16, 'FD');
@@ -733,7 +787,7 @@
       doc.setTextColor(31, 41, 55);
       doc.text(`Verified & System Entered By: ${entryUser} (${entryEmail})`, 19, finalY + 11);
 
-      // Only Authorized Approval (Receiver Signature Completely Removed)
+      // Single Line Signature: Only Authorized Approval (Receiver Signature Completely Removed)
       const sigY = finalY + 35;
       doc.setDrawColor(156, 163, 175);
       doc.line(135, sigY, 195, sigY);
