@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DCCDM - Expense & Voucher Manager</title>
+  <title>DCCDM - Expense Manager</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
@@ -16,7 +16,6 @@
     body { background: #050505; color: #f4f4f5; font-family: sans-serif; }
     .bg-neon { background-color: #00ff66; }
     .text-neon { color: #00ff66; }
-    .border-neon { border-color: #00ff66; }
     .active-role { background-color: #00ff66 !important; color: #000 !important; font-weight: bold; }
   </style>
 </head>
@@ -28,7 +27,7 @@
       <h1 class="text-lg font-bold text-white tracking-wide">DCCDM EXPENSE MANAGER</h1>
       <div id="userHeader" class="hidden text-xs text-zinc-400 flex items-center gap-3">
         <span id="userInfo" class="text-neon font-semibold"></span>
-        <button id="logoutBtn" class="bg-red-900/80 hover:bg-red-800 text-white px-3 py-1.5 rounded transition">Logout</button>
+        <button id="logoutBtn" class="bg-red-900 hover:bg-red-800 text-white px-3 py-1.5 rounded transition">Logout</button>
       </div>
     </header>
 
@@ -40,9 +39,9 @@
         <button id="adminRoleBtn" type="button" class="py-2 text-xs rounded text-zinc-400">Admin Portal</button>
       </div>
       <div class="space-y-3">
-        <input type="email" id="emailInput" placeholder="Enter Email" class="w-full p-2.5 bg-zinc-950 border border-zinc-700 rounded text-sm text-white focus:outline-none focus:border-neon">
-        <input type="password" id="passInput" placeholder="Enter Password" class="w-full p-2.5 bg-zinc-950 border border-zinc-700 rounded text-sm text-white focus:outline-none focus:border-neon">
-        <button id="loginBtn" class="w-full bg-neon text-black font-bold py-2.5 rounded text-sm hover:opacity-90 transition shadow-lg">Sign In</button>
+        <input type="email" id="emailInput" placeholder="Enter Email" class="w-full p-2.5 bg-zinc-950 border border-zinc-700 rounded text-sm text-white focus:outline-none focus:border-green-400">
+        <input type="password" id="passInput" placeholder="Enter Password" class="w-full p-2.5 bg-zinc-950 border border-zinc-700 rounded text-sm text-white focus:outline-none focus:border-green-400">
+        <button id="loginBtn" class="w-full bg-neon text-black font-bold py-2.5 rounded text-sm hover:opacity-90 transition">Sign In</button>
       </div>
     </div>
 
@@ -112,7 +111,6 @@
   </div>
 
   <script>
-    // Supabase Initialization
     const SUPABASE_URL = 'https://vtzcwmqiyuqmzgwctuut.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.VC8xy-Rfxva1oY8vW4WXpE1YSPspx2aYdh110SZiE2k';
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -121,7 +119,6 @@
     let loggedUser = null;
     let allExpenses = [];
 
-    // Role Switcher
     document.getElementById('staffRoleBtn').addEventListener('click', () => {
       selectedRole = 'staff';
       document.getElementById('staffRoleBtn').classList.add('active-role');
@@ -134,21 +131,17 @@
       document.getElementById('staffRoleBtn').classList.remove('active-role');
     });
 
-    // Default Date to Today
     document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
 
-    // Login Handler
     document.getElementById('loginBtn').addEventListener('click', async () => {
       const email = document.getElementById('emailInput').value.trim();
       const password = document.getElementById('passInput').value;
-
-      if (!email || !password) return alert("Please fill in email and password.");
+      if (!email || !password) return alert("Please enter email & password.");
 
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) return alert("Login Failed: " + error.message);
 
-      // Check profile role
-      const { data: profile, profileErr } = await supabase.from('profiles').select('role, full_name').eq('id', data.user.id).single();
+      const { data: profile } = await supabase.from('profiles').select('role, full_name').eq('id', data.user.id).single();
       
       if (selectedRole === 'admin' && profile?.role !== 'admin') {
         await supabase.auth.signOut();
@@ -160,17 +153,14 @@
       document.getElementById('dashBox').classList.remove('hidden');
       document.getElementById('userHeader').classList.remove('hidden');
       document.getElementById('userInfo').innerText = `${profile?.full_name || data.user.email} (${selectedRole.toUpperCase()})`;
-
       loadExpenses();
     });
 
-    // Logout Handler
     document.getElementById('logoutBtn').addEventListener('click', async () => {
       await supabase.auth.signOut();
       location.reload();
     });
 
-    // Save Expense Handler
     document.getElementById('expenseForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const saveBtn = document.getElementById('saveBtn');
@@ -185,7 +175,6 @@
         const file = fileInput.files[0];
         const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
         const { error: uploadError } = await supabase.storage.from('vouchers').upload(fileName, file);
-        
         if (!uploadError) {
           const { data: urlData } = supabase.storage.from('vouchers').getPublicUrl(fileName);
           attachmentUrl = urlData.publicUrl;
@@ -204,35 +193,27 @@
       }]);
 
       if (insertError) {
-        alert("Error saving voucher: " + insertError.message);
+        alert("Error saving: " + insertError.message);
       } else {
         alert("Voucher Saved Successfully!");
         document.getElementById('expenseForm').reset();
         document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
         loadExpenses();
       }
-
       saveBtn.innerText = "Save Voucher";
       saveBtn.disabled = false;
     });
 
-    // Load Expenses Table
     async function loadExpenses() {
       const { data, error } = await supabase.from('expenses').select('*').order('created_at', { ascending: false });
-      if (error) {
-        console.error(error);
-        return;
-      }
-
+      if (error) return;
       allExpenses = data || [];
       const tbody = document.getElementById('tableBody');
       tbody.innerHTML = '';
-
       if (allExpenses.length === 0) {
         tbody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-zinc-500">No records found.</td></tr>`;
         return;
       }
-
       allExpenses.forEach(item => {
         tbody.innerHTML += `
           <tr class="hover:bg-zinc-800/40 transition">
@@ -249,27 +230,17 @@
       });
     }
 
-    // Delete Voucher (Admin Only)
     async function deleteVoucher(id, vId) {
-      if (selectedRole !== 'admin') {
-        alert("Unauthorized action!");
-        return;
-      }
-
-      if (confirm(`Are you sure you want to delete Voucher ${vId}?`)) {
+      if (selectedRole !== 'admin') return alert("Unauthorized!");
+      if (confirm(`Delete Voucher ${vId}?`)) {
         const { error } = await supabase.from('expenses').delete().eq('id', id);
-        if (error) {
-          alert("Delete failed: " + error.message);
-        } else {
-          alert("Voucher deleted successfully.");
-          loadExpenses();
-        }
+        if (error) alert("Delete failed: " + error.message);
+        else { alert("Deleted successfully."); loadExpenses(); }
       }
     }
 
-    // Export Excel
     document.getElementById('excelBtn').addEventListener('click', () => {
-      if (allExpenses.length === 0) return alert("No data available to export.");
+      if (allExpenses.length === 0) return alert("No data to export.");
       const ws = XLSX.utils.json_to_sheet(allExpenses);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, "Expenses");
