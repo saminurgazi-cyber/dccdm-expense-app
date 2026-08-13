@@ -1,20 +1,169 @@
-<!-- Auth Card with Role Switcher -->
-    <div id="authContainer" class="max-w-md mx-auto bg-zinc-900/90 backdrop-blur rounded-xl shadow-neon border border-zinc-800 p-6 my-10">
-      <div class="text-center mb-5">
-        <img id="authLogoImg" src="" alt="Logo" class="w-16 h-16 rounded-full border border-neon p-0.5 mx-auto mb-3 shadow-neon object-contain hidden">
-        <h2 id="authTitle" class="text-lg font-bold text-white">Sign In to Account</h2>
-        <p id="authSubTitle" class="text-xs text-zinc-400 mt-1">Select your access portal</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DAKSHIN CHANDPUR CHILD DEVELOPMENT MISSION</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    .bg-neon { background-color: #00ff66; } .text-neon { color: #00ff66; } .border-neon { border-color: #00ff66; }
+    .shadow-neon { box-shadow: 0 0 15px rgba(0, 255, 102, 0.4); }
+    .role-btn-active { background-color: #00ff66 !important; color: #000 !important; font-weight: bold; }
+    body { background: #050505; color: #e4e4e7; }
+    .hidden-picker { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+    .custom-select { appearance: none; background-image: url("data:image/svg+xml;utf8,<svg fill='%2300ff66' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>"); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1.5rem; padding-right: 2.5rem !important; }
+  </style>
+</head>
+<body class="antialiased">
+  <header class="bg-zinc-950 border-b border-zinc-800 p-4 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <h1 class="text-sm font-bold tracking-tight text-white">DCCDM - EXPENSE MANAGER</h1>
+      <div id="userStatusArea"></div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto p-4">
+    <!-- Auth Section -->
+    <div id="authContainer" class="max-w-md mx-auto bg-zinc-900 rounded-xl p-6 border border-zinc-800 shadow-xl">
+      <h2 class="text-lg font-bold text-white mb-4 text-center">Login Portal</h2>
+      <div class="grid grid-cols-2 gap-2 bg-zinc-950 p-1 rounded-lg mb-4">
+        <button id="roleStaffBtn" onclick="setRole('staff')" class="py-2 text-xs font-bold rounded role-btn-active">Staff</button>
+        <button id="roleAdminBtn" onclick="setRole('admin')" class="py-2 text-xs font-bold rounded text-zinc-400">Admin</button>
+      </div>
+      <form onsubmit="handleAuth(event)" class="space-y-3">
+        <input type="email" id="authEmail" placeholder="Email" required class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded text-white text-sm">
+        <input type="password" id="authPassword" placeholder="Password" required class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded text-white text-sm">
+        <button type="submit" class="w-full bg-neon text-black font-bold py-2 rounded text-sm hover:bg-green-400">Login</button>
+      </form>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="appDashboard" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div class="lg:col-span-4 bg-zinc-900 rounded-xl p-5 border border-zinc-800">
+        <h2 class="text-sm font-bold text-white mb-4">Entry Voucher</h2>
+        <form id="expenseForm" onsubmit="saveExpense(event)" class="space-y-3">
+          <input type="date" id="expenseDate" required class="hidden-picker">
+          <div onclick="openPicker('expenseDate')" class="flex items-center justify-between bg-zinc-950 border-2 border-neon p-2 rounded cursor-pointer">
+            <span id="dateDisp" class="text-xs text-white">Select Date</span>
+            <button type="button" class="bg-white text-black px-2 py-1 text-[10px] font-bold rounded">CALENDAR</button>
+          </div>
+          <input type="number" id="expenseAmount" step="0.01" required placeholder="Amount" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded text-white text-sm">
+          <select id="expenseCategory" class="custom-select w-full p-2 bg-zinc-950 border-2 border-neon rounded text-white text-sm">
+            <option value="Office Supplies">Office Supplies</option>
+            <option value="Travel & Transport">Travel & Transport</option>
+            <option value="Food & Refreshment">Food & Refreshment</option>
+            <option value="Others">Others</option>
+          </select>
+          <input type="text" id="spentBy" required placeholder="Spent By (Who paid?)" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded text-white text-sm">
+          <input type="text" id="paidTo" required placeholder="Paid To (Vendor)" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded text-white text-sm">
+          <input type="file" id="attachmentFile" class="w-full text-xs text-zinc-400 p-2">
+          <button type="submit" id="saveBtn" class="w-full bg-neon text-black font-bold py-2 rounded text-sm">Save Voucher</button>
+        </form>
       </div>
 
-      <!-- Role Selector Tabs -->
-      <div class="grid grid-cols-2 gap-2 bg-zinc-950 p-1 rounded-lg border border-zinc-800 mb-5">
-        <button type="button" id="roleStaffBtn" onclick="selectLoginRole('staff')" class="py-2 text-xs font-bold rounded-md transition text-zinc-400 role-btn-active">
-          <i class="fa-solid fa-user mr-1"></i> Staff Portal
-        </button>
-        <button type="button" id="roleAdminBtn" onclick="selectLoginRole('admin')" class="py-2 text-xs font-bold rounded-md transition text-zinc-400">
-          <i class="fa-solid fa-user-shield mr-1"></i> Admin Portal
-        </button>
+      <div class="lg:col-span-8 bg-zinc-900 rounded-xl p-5 border border-zinc-800">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-sm font-bold text-white">Records</h2>
+          <div class="space-x-2">
+            <button onclick="exportReport('monthly')" class="text-xs bg-red-900 text-white px-3 py-1 rounded">Monthly PDF</button>
+            <button onclick="exportExcel()" class="text-xs bg-emerald-700 text-white px-3 py-1 rounded">Excel</button>
+          </div>
+        </div>
+        <table class="w-full text-left text-xs">
+          <thead class="text-zinc-400"><tr><th class="p-2">ID</th><th class="p-2">Spent By</th><th class="p-2">Amount</th><th class="p-2">Actions</th></tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
       </div>
+    </div>
+  </main>
 
-      <form id="authForm" onsubmit="handleAuth(event)" class="space-y-4">
-        <!-- ... (বাকি ফর্ম কোড আগের মতোই থাকবে) -->
+  <script>
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+    const SUPABASE_KEY = 'YOUR_SUPABASE_KEY';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let role = 'staff';
+    let currentUser = null;
+
+    function setRole(r) {
+      role = r;
+      document.getElementById('roleStaffBtn').classList.toggle('role-btn-active', role === 'staff');
+      document.getElementById('roleAdminBtn').classList.toggle('role-btn-active', role === 'admin');
+    }
+
+    async function handleAuth(e) {
+      e.preventDefault();
+      const email = document.getElementById('authEmail').value;
+      const pass = document.getElementById('authPassword').value;
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
+      if (error) return alert(error.message);
+      
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
+      if (role === 'admin' && profile?.role !== 'admin') {
+        alert("Not an Admin!");
+        await supabase.auth.signOut();
+        return;
+      }
+      currentUser = data.user;
+      location.reload();
+    }
+
+    async function saveExpense(e) {
+      e.preventDefault();
+      const btn = document.getElementById('saveBtn');
+      btn.disabled = true; btn.innerText = "Saving...";
+      
+      const vId = 'DCCDM-' + Date.now().toString().slice(-6);
+      const file = document.getElementById('attachmentFile').files[0];
+      let url = null;
+      if (file) {
+        const { data } = await supabase.storage.from('vouchers').upload(`${vId}_${file.name}`, file);
+        url = supabase.storage.from('vouchers').getPublicUrl(data.path).data.publicUrl;
+      }
+
+      await supabase.from('expenses').insert({
+        voucher_id: vId,
+        expense_date: document.getElementById('expenseDate').value,
+        amount: document.getElementById('expenseAmount').value,
+        category: document.getElementById('expenseCategory').value,
+        spent_by: document.getElementById('spentBy').value,
+        paid_to: document.getElementById('paidTo').value,
+        attachment_url: url,
+        created_by: currentUser.id
+      });
+      alert("Saved!");
+      btn.disabled = false; btn.innerText = "Save Voucher";
+      loadData();
+    }
+
+    async function loadData() {
+      const { data } = await supabase.from('expenses').select('*');
+      expenses = data;
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
+      data.forEach(item => {
+        tbody.innerHTML += `
+          <tr class="border-t border-zinc-800">
+            <td class="p-2">${item.voucher_id}</td>
+            <td class="p-2">${item.spent_by}</td>
+            <td class="p-2">₹${item.amount}</td>
+            <td class="p-2">
+              <button onclick="printVoucher('${item.voucher_id}')" class="text-blue-400 mr-2"><i class="fa fa-print"></i></button>
+              ${role === 'admin' ? `<button onclick="deleteRow(${item.id})" class="text-red-500"><i class="fa fa-trash"></i></button>` : ''}
+            </td>
+          </tr>
+        `;
+      });
+    }
+
+    async function logout() { await supabase.auth.signOut(); location.reload(); }
+    function openPicker(id) { document.getElementById(id).showPicker(); }
+    // Add rest of export logic here...
+  </script>
+</body>
+</html>
