@@ -17,7 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    /* High-Contrast Neon & Magenta Theme Custom Styles */
+    /* High-Contrast Theme Styles */
     .bg-neon { background-color: #00ff66; }
     .text-neon { color: #00ff66; }
     .border-neon { border-color: #00ff66; }
@@ -202,14 +202,14 @@
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-zinc-400 mb-1">Spent / Entered By (স্বয়ংক্রিয় স্টাফ নাম)</label>
-            <!-- Auto-populated from logged-in user -->
-            <input type="text" id="spentBy" required readonly class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-800 text-neon font-bold rounded-lg outline-none cursor-not-allowed">
+            <label class="block text-xs font-medium text-zinc-400 mb-1">Spent By (কে টাকা পেমেন্ট করলো)</label>
+            <!-- Editable field to write who paid the money -->
+            <input type="text" id="spentBy" required placeholder="Name of Person Who Paid" class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
           </div>
 
           <div>
             <label class="block text-xs font-medium text-zinc-400 mb-1">Paid To (কাকে পেমেন্ট করা হলো)</label>
-            <input type="text" id="paidTo" required placeholder="Vendor or Person Name" class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
+            <input type="text" id="paidTo" required placeholder="Vendor or Receiver Name" class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
           </div>
 
           <div>
@@ -261,7 +261,7 @@
           </div>
           <div>
              <label class="block text-[10px] uppercase font-bold text-zinc-400 mb-1">Search</label>
-             <input type="text" id="searchInput" oninput="renderTable()" placeholder="Voucher ID, Staff..." class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
+             <input type="text" id="searchInput" oninput="renderTable()" placeholder="Voucher ID, Spent By..." class="w-full text-xs p-2.5 bg-zinc-950 border border-zinc-700 text-white rounded-lg focus-neon">
           </div>
           <div>
              <label class="block text-[10px] uppercase font-bold text-neon mb-1">Category</label>
@@ -285,7 +285,7 @@
                 <th class="p-2.5 font-semibold">Voucher ID</th>
                 <th class="p-2.5 font-semibold">Date</th>
                 <th class="p-2.5 font-semibold">Category</th>
-                <th class="p-2.5 font-semibold">Entered By</th>
+                <th class="p-2.5 font-semibold">Spent By</th>
                 <th class="p-2.5 font-semibold text-right">Amount (₹)</th>
                 <th class="p-2.5 font-semibold text-center">Actions</th>
               </tr>
@@ -410,17 +410,13 @@
       const { data } = await _supabase.from('profiles').select('*').eq('id', user.id).single();
       userProfile = data || { email: user.email, full_name: user.email, is_approved: false };
 
-      // Set logged-in staff name automatically in form
-      const staffName = userProfile?.full_name || currentUser.email;
-      document.getElementById('spentBy').value = staffName;
-
       if (userProfile && userProfile.is_approved) await loadExpensesFromSupabase();
       updateUI();
     }
 
     async function loadExpensesFromSupabase() {
       if (!_supabase) return;
-      const { data } = await _supabase.from('expenses').select('*').order('created_at', { ascending: false });
+      const { data } = await _supabase.from('expenses').select('*, profiles:created_by(full_name, email)').order('created_at', { ascending: false });
       if (data) expenses = data;
     }
 
@@ -575,12 +571,8 @@
 
       alert('Voucher Saved Successfully!');
       document.getElementById('expenseForm').reset();
-      
-      const currentStaff = userProfile?.full_name || currentUser.email;
-      document.getElementById('spentBy').value = currentStaff;
       document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
       document.getElementById('expenseDateDisplay').innerText = new Date().toISOString().split('T')[0];
-      
       document.getElementById('saveVoucherBtn').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Expense Voucher';
       document.getElementById('saveVoucherBtn').disabled = false;
       
@@ -647,7 +639,7 @@
             <td class="p-2.5 font-mono font-bold text-neon">${item.voucher_id || 'N/A'}</td>
             <td class="p-2.5 text-zinc-300">${item.expense_date}</td>
             <td class="p-2.5"><span class="bg-zinc-950 text-zinc-300 px-2 py-0.5 rounded text-[10px] font-medium border border-zinc-800">${item.category}</span></td>
-            <td class="p-2.5 text-zinc-300 font-bold truncate max-w-[120px]" title="${item.spent_by}">${item.spent_by || 'Staff'}</td>
+            <td class="p-2.5 text-zinc-300 truncate max-w-[120px]" title="${item.spent_by}">${item.spent_by || 'N/A'}</td>
             <td class="p-2.5 text-right font-bold text-white">₹ ${Number(item.amount).toFixed(2)}</td>
             <td class="p-2.5 text-center">
               <div class="flex items-center justify-center gap-1.5">
@@ -685,6 +677,9 @@
         } catch(err) {}
       }
 
+      // Auto-detected logged-in Entry User Name
+      const entryUser = item.profiles?.full_name || item.profiles?.email || 'Logged Staff';
+
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(30, 58, 138);
@@ -702,7 +697,7 @@
       doc.setTextColor(31, 41, 55);
       doc.text(`Voucher ID: ${item.voucher_id}`, 15, 48);
       doc.text(`Date: ${item.expense_date}`, 145, 48);
-      doc.text(`Entered By: ${item.spent_by || 'Staff'}`, 15, 55);
+      doc.text(`Spent By: ${item.spent_by || 'N/A'}`, 15, 55);
       doc.text(`Paid To: ${item.paid_to}`, 145, 55);
 
       doc.autoTable({
@@ -714,13 +709,18 @@
         styles: { fontSize: 10, cellPadding: 5 }
       });
 
-      const finalY = doc.lastAutoTable.finalY + 40;
-      doc.setDrawColor(156, 163, 175);
-      doc.line(15, finalY, 65, finalY);
-      doc.text('Entered By Signature', 20, finalY + 5);
+      const finalY = doc.lastAutoTable.finalY + 30;
+      doc.setFontSize(9);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`System Entry Registered By: ${entryUser}`, 15, finalY);
 
-      doc.line(145, finalY, 195, finalY);
-      doc.text('Authorized Approval', 150, finalY + 5);
+      const sigY = finalY + 25;
+      doc.setDrawColor(156, 163, 175);
+      doc.line(15, sigY, 65, sigY);
+      doc.text('Receiver / Paid Signature', 18, sigY + 5);
+
+      doc.line(145, sigY, 195, sigY);
+      doc.text('Authorized Approval', 152, sigY + 5);
 
       doc.save(`${item.voucher_id}.pdf`);
     }
@@ -758,28 +758,30 @@
       let total = 0;
       const tableBody = filteredData.map((item, index) => {
         total += Number(item.amount);
+        const entryUser = item.profiles?.full_name || item.profiles?.email || 'Staff';
         return [
           index + 1,
           item.expense_date,
           item.voucher_id,
           item.category,
-          item.spent_by || 'Staff',
+          item.spent_by,
+          entryUser,
           `Rs. ${Number(item.amount).toFixed(2)}`
         ];
       });
 
       tableBody.push([
-        { content: 'Total Annual Expense:', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
+        { content: 'Total Annual Expense:', colSpan: 6, styles: { halign: 'right', fontStyle: 'bold' } }, 
         { content: `Rs. ${total.toFixed(2)}`, styles: { fontStyle: 'bold', textColor: [30, 58, 138] } }
       ]);
 
       doc.autoTable({
         startY: 37,
-        head: [['Sl.', 'Date', 'Voucher ID', 'Category', 'Entered By', 'Amount (INR)']],
+        head: [['Sl.', 'Date', 'Voucher ID', 'Category', 'Spent By', 'Entered By', 'Amount (INR)']],
         body: tableBody,
         headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: 'bold' },
         theme: 'grid',
-        styles: { fontSize: 8.5, cellPadding: 3 }
+        styles: { fontSize: 8, cellPadding: 2.5 }
       });
 
       doc.save(`DCCDM_Annual_Report_${yearVal}.pdf`);
@@ -819,28 +821,30 @@
       let total = 0;
       const tableBody = filteredData.map((item, index) => {
         total += Number(item.amount);
+        const entryUser = item.profiles?.full_name || item.profiles?.email || 'Staff';
         return [
           index + 1,
           item.expense_date,
           item.voucher_id,
           item.category,
-          item.spent_by || 'Staff',
+          item.spent_by,
+          entryUser,
           `Rs. ${Number(item.amount).toFixed(2)}`
         ];
       });
 
       tableBody.push([
-        { content: 'Total Monthly Expense:', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, 
+        { content: 'Total Monthly Expense:', colSpan: 6, styles: { halign: 'right', fontStyle: 'bold' } }, 
         { content: `Rs. ${total.toFixed(2)}`, styles: { fontStyle: 'bold', textColor: [30, 58, 138] } }
       ]);
 
       doc.autoTable({
         startY: 37,
-        head: [['Sl.', 'Date', 'Voucher ID', 'Category', 'Entered By', 'Amount (INR)']],
+        head: [['Sl.', 'Date', 'Voucher ID', 'Category', 'Spent By', 'Entered By', 'Amount (INR)']],
         body: tableBody,
         headStyles: { fillColor: [30, 58, 138], textColor: [255, 255, 255], fontStyle: 'bold' },
         theme: 'grid',
-        styles: { fontSize: 8.5, cellPadding: 3 }
+        styles: { fontSize: 8, cellPadding: 2.5 }
       });
 
       doc.save(`DCCDM_Monthly_Report_${monthVal}.pdf`);
@@ -851,9 +855,10 @@
         'Voucher ID': e.voucher_id,
         'Date': e.expense_date,
         'Category': e.category,
-        'Entered By': e.spent_by || 'Staff',
+        'Spent By': e.spent_by,
         'Paid To': e.paid_to,
         'Amount (INR)': e.amount,
+        'Entered By (Account)': e.profiles?.full_name || e.profiles?.email || 'Staff',
         'Attachment Link': e.attachment_url || 'No File'
       }));
 
