@@ -62,6 +62,18 @@
       padding: 10px;
     }
 
+    /* Custom Dropdown Styling for Visible Arrow */
+    select {
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      background-image: url('data:image/svg+xml;utf8,<svg fill="%2300ff66" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 0.7rem center;
+      background-size: 1.2rem;
+      padding-right: 2.5rem !important;
+    }
+
     /* Date and Month Input Calendar Styling */
     input[type="date"], input[type="month"] {
       cursor: pointer;
@@ -158,8 +170,10 @@
         <form id="expenseForm" onsubmit="saveExpense(event)" class="space-y-3">
           <div>
             <label class="block text-xs font-bold text-neon mb-1">Expense Date (ক্যালেন্ডার থেকে বেছে নিন)</label>
-            <!-- Strict Typing Block: Keyboard inputs disabled; opens picker on click -->
-            <input type="date" id="expenseDate" required readonly onclick="this.showPicker()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon">
+            <!-- Strict Keyboard Typing Block: Non-editable and click opens native calendar -->
+            <div class="relative cursor-pointer" onclick="document.getElementById('expenseDate').showPicker()">
+              <input type="date" id="expenseDate" required readonly onkeydown="return false;" onfocus="this.showPicker()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
+            </div>
           </div>
 
           <div>
@@ -169,7 +183,7 @@
 
           <div>
             <label class="block text-xs font-bold text-neon mb-1">Category (খাত সিলেক্ট করুন)</label>
-            <select id="expenseCategory" required class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon">
+            <select id="expenseCategory" required class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
               <option value="Office Supplies">Office Supplies (কাগজ, কলম, ষ্টেশনরী)</option>
               <option value="Travel & Transport">Travel & Transport (যাতায়াত খরচ)</option>
               <option value="Food & Refreshment">Food & Refreshment (আপ্যায়ন)</option>
@@ -221,17 +235,18 @@
           </div>
         </div>
 
-        <!-- High-Visibility Highlighted Dropdowns -->
+        <!-- High-Visibility Highlighted Dropdowns with Arrow Support -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <div>
              <label class="block text-[10px] uppercase font-bold text-neon mb-1">Select Year</label>
-             <select id="yearPicker" onchange="renderTable()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon">
+             <select id="yearPicker" onchange="renderTable()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
              </select>
           </div>
           <div>
              <label class="block text-[10px] uppercase font-bold text-neon mb-1">Select Month</label>
-             <!-- Readonly Input to prevent manual typing -->
-             <input type="month" id="monthPicker" onchange="renderTable()" readonly onclick="this.showPicker()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon">
+             <div class="relative cursor-pointer" onclick="document.getElementById('monthPicker').showPicker()">
+               <input type="month" id="monthPicker" onchange="renderTable()" readonly onfocus="this.showPicker()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
+             </div>
           </div>
           <div>
              <label class="block text-[10px] uppercase font-bold text-zinc-400 mb-1">Search</label>
@@ -239,7 +254,7 @@
           </div>
           <div>
              <label class="block text-[10px] uppercase font-bold text-neon mb-1">Category</label>
-             <select id="filterCategory" onchange="renderTable()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon">
+             <select id="filterCategory" onchange="renderTable()" class="w-full text-xs p-2.5 bg-zinc-950 border-2 border-neon text-white font-bold rounded-lg focus-neon shadow-neon cursor-pointer">
                 <option value="ALL">All Categories</option>
                 <option value="Office Supplies">Office Supplies</option>
                 <option value="Travel & Transport">Travel & Transport</option>
