@@ -414,7 +414,6 @@
 
     async function loadExpensesFromSupabase() {
       if (!_supabase) return;
-      // Load expenses without broken relation error
       const { data, error } = await _supabase.from('expenses').select('*').order('created_at', { ascending: false });
       if (data) expenses = data;
     }
@@ -560,7 +559,6 @@
         }
       }
 
-      // Unique Voucher ID generated in frontend to prevent DB trigger block
       const year = new Date().getFullYear();
       const random4Digit = Math.floor(1000 + Math.random() * 9000);
       const voucher_id = `DCCDM-${year}-${random4Digit}`;
@@ -673,6 +671,7 @@
       document.getElementById('totalAmountCell').innerText = '₹ ' + total.toFixed(2);
     }
 
+    // Export Single Voucher with Digital Signature & Only Authorized Approval
     function exportSinglePDF(voucherId) {
       const item = expenses.find(e => e.voucher_id === voucherId);
       if (!item) return;
@@ -720,6 +719,7 @@
 
       const finalY = doc.lastAutoTable.finalY + 25;
 
+      // Digital Signature Stamp
       doc.setDrawColor(0, 150, 80);
       doc.setFillColor(240, 253, 244);
       doc.rect(15, finalY, 180, 16, 'FD');
@@ -733,13 +733,11 @@
       doc.setTextColor(31, 41, 55);
       doc.text(`Verified & System Entered By: ${entryUser} (${entryEmail})`, 19, finalY + 11);
 
+      // Single Line Signature: Only Authorized Approval (Receiver Signature Removed)
       const sigY = finalY + 35;
       doc.setDrawColor(156, 163, 175);
-      doc.line(15, sigY, 65, sigY);
-      doc.text('Receiver Signature', 22, sigY + 5);
-
-      doc.line(145, sigY, 195, sigY);
-      doc.text('Authorized Approval', 152, sigY + 5);
+      doc.line(135, sigY, 195, sigY);
+      doc.text('Authorized Approval', 145, sigY + 5);
 
       doc.save(`${item.voucher_id}.pdf`);
     }
