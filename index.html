@@ -17,7 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
-    /* High-Contrast Neon & Magenta Theme Custom Styles */
+    /* High-Contrast Theme Styles */
     .bg-neon { background-color: #00ff66; }
     .text-neon { color: #00ff66; }
     .border-neon { border-color: #00ff66; }
@@ -75,9 +75,13 @@
       padding-right: 2.5rem !important;
     }
 
-    /* Input Calendar Cursor */
-    input[type="date"], input[type="month"] {
-      color-scheme: dark;
+    /* Hidden Native Pickers triggered via buttons */
+    .hidden-picker {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+      pointer-events: none;
     }
   </style>
 </head>
@@ -170,11 +174,12 @@
         <form id="expenseForm" onsubmit="saveExpense(event)" class="space-y-3">
           <div>
             <label class="block text-xs font-bold text-neon mb-1">Expense Date (ক্যালেন্ডার বাটন চাপুন)</label>
-            <!-- Highlighted Calendar Box with Non-Editable Date Field -->
-            <div class="relative flex items-center bg-zinc-950 border-2 border-neon rounded-lg shadow-neon cursor-pointer p-1" onclick="triggerDatePicker('expenseDate')">
-              <input type="date" id="expenseDate" required readonly onkeydown="return false;" tabindex="-1" class="w-full text-xs p-1.5 bg-transparent text-white font-bold outline-none cursor-pointer pointer-events-none">
-              <button type="button" class="bg-neon text-black px-3 py-1.5 rounded font-bold text-xs flex items-center gap-1 hover-bg-neon transition shadow-sm ml-1">
-                <i class="fa-solid fa-calendar-days text-sm"></i>
+            <!-- Hidden Native Picker & Pure White Highlighted Button -->
+            <input type="date" id="expenseDate" required class="hidden-picker">
+            <div onclick="openPicker('expenseDate')" class="flex items-center justify-between bg-zinc-950 border-2 border-neon p-1.5 rounded-lg shadow-neon cursor-pointer">
+              <span id="expenseDateDisplay" class="text-xs font-bold text-white pl-2">YYYY-MM-DD</span>
+              <button type="button" class="bg-white text-black font-extrabold px-3 py-1.5 rounded text-xs flex items-center gap-1.5 shadow-md hover:bg-zinc-200 transition">
+                <i class="fa-solid fa-calendar-days text-sm text-black"></i> Select
               </button>
             </div>
           </div>
@@ -238,7 +243,7 @@
           </div>
         </div>
 
-        <!-- Highlighted Dropdowns & Filter Controls -->
+        <!-- Highlighted Dropdowns & Pure White Month Button -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           <div>
              <label class="block text-[10px] uppercase font-bold text-neon mb-1">Select Year</label>
@@ -247,10 +252,11 @@
           </div>
           <div>
              <label class="block text-[10px] uppercase font-bold text-neon mb-1">Select Month</label>
-             <div class="relative flex items-center bg-zinc-950 border-2 border-neon rounded-lg shadow-neon cursor-pointer p-1" onclick="triggerDatePicker('monthPicker')">
-               <input type="month" id="monthPicker" onchange="renderTable()" readonly onkeydown="return false;" tabindex="-1" class="w-full text-xs p-1 bg-transparent text-white font-bold outline-none cursor-pointer pointer-events-none">
-               <button type="button" class="bg-neon text-black px-2 py-1 rounded font-bold text-xs hover-bg-neon transition shadow-sm ml-1">
-                 <i class="fa-solid fa-calendar"></i>
+             <input type="month" id="monthPicker" onchange="updateMonthDisplay(); renderTable();" class="hidden-picker">
+             <div onclick="openPicker('monthPicker')" class="flex items-center justify-between bg-zinc-950 border-2 border-neon p-1.5 rounded-lg shadow-neon cursor-pointer">
+               <span id="monthPickerDisplay" class="text-xs font-bold text-white pl-2">YYYY-MM</span>
+               <button type="button" class="bg-white text-black font-extrabold px-2 py-1 rounded text-xs flex items-center gap-1 hover:bg-zinc-200 transition">
+                 <i class="fa-solid fa-calendar text-black"></i> Select
                </button>
              </div>
           </div>
@@ -316,7 +322,10 @@
 
     const today = new Date();
     document.getElementById('expenseDate').value = today.toISOString().split('T')[0];
+    document.getElementById('expenseDateDisplay').innerText = today.toISOString().split('T')[0];
+    
     document.getElementById('monthPicker').value = today.toISOString().slice(0, 7);
+    document.getElementById('monthPickerDisplay').innerText = today.toISOString().slice(0, 7);
 
     const yearPicker = document.getElementById('yearPicker');
     const currentYear = today.getFullYear();
@@ -325,11 +334,24 @@
       yearPicker.innerHTML += `<option value="${y}" ${y === currentYear ? 'selected' : ''}>${y}</option>`;
     }
 
-    function triggerDatePicker(id) {
+    function openPicker(id) {
       const el = document.getElementById(id);
-      if (el && el.showPicker) {
-        try { el.showPicker(); } catch(e) { el.focus(); }
+      if (el) {
+        if (el.showPicker) {
+          try { el.showPicker(); } catch(e) { el.click(); }
+        } else {
+          el.click();
+        }
       }
+    }
+
+    document.getElementById('expenseDate').addEventListener('change', function() {
+      document.getElementById('expenseDateDisplay').innerText = this.value || 'YYYY-MM-DD';
+    });
+
+    function updateMonthDisplay() {
+      const val = document.getElementById('monthPicker').value;
+      document.getElementById('monthPickerDisplay').innerText = val || 'YYYY-MM';
     }
 
     async function loadLogo() {
@@ -551,6 +573,7 @@
       alert('Voucher Saved Successfully!');
       document.getElementById('expenseForm').reset();
       document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
+      document.getElementById('expenseDateDisplay').innerText = new Date().toISOString().split('T')[0];
       document.getElementById('saveVoucherBtn').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Save Expense Voucher';
       document.getElementById('saveVoucherBtn').disabled = false;
       
