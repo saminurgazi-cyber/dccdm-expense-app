@@ -8,8 +8,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Supabase JS v2 -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { background: #000; color: #fff; font-family: sans-serif; }
     .active-tab { background: #00ff66 !important; color: #000 !important; font-weight: bold; }
@@ -67,12 +65,18 @@
     </div>
   </div>
 
-  <script>
-    // Supabase Setup with Correct URL & Key
+  <!-- Supabase v2 ESM Import (Invalid API Key Error Fix) -->
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
     const SUPABASE_URL = 'https://vtzcwmqiyuqmzgwctuut.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0emN3bXFpeXVxbXpnd2N0dXV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMDA3NTAsImV4cCI6MjEwMTc3Njc1MH0.VC8xy-Rfxva1oY8vW4WXpE1YSPspx2aYdh110SZiE2k';
-    const _db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    const _db = createClient(SUPABASE_URL, SUPABASE_KEY);
+    window._db = _db; // Global access for inline onclick events
+  </script>
 
+  <script>
     let activeRole = 'staff';
     let currentUser = null;
 
@@ -90,13 +94,13 @@
 
       if (!email || !pass) return alert("Please fill all fields");
 
-      const { data, error } = await _db.auth.signInWithPassword({ email, password: pass });
+      const { data, error } = await window._db.auth.signInWithPassword({ email, password: pass });
       if (error) return alert("Login Failed: " + error.message);
 
-      const { data: profile } = await _db.from('profiles').select('*').eq('id', data.user.id).single();
+      const { data: profile } = await window._db.from('profiles').select('*').eq('id', data.user.id).single();
 
       if (activeRole === 'admin' && profile?.role !== 'admin') {
-        await _db.auth.signOut();
+        await window._db.auth.signOut();
         return alert("Access Denied! You are not an Admin.");
       }
 
@@ -117,14 +121,14 @@
       if (fileInput.files.length > 0) {
         const file = fileInput.files[0];
         const fName = `${Date.now()}_${file.name}`;
-        const { error: upErr } = await _db.storage.from('vouchers').upload(fName, file);
+        const { error: upErr } = await window._db.storage.from('vouchers').upload(fName, file);
         if (!upErr) {
-          const { data: pubData } = _db.storage.from('vouchers').getPublicUrl(fName);
+          const { data: pubData } = window._db.storage.from('vouchers').getPublicUrl(fName);
           fileUrl = pubData.publicUrl;
         }
       }
 
-      const { error: insErr } = await _db.from('expenses').insert([{
+      const { error: insErr } = await window._db.from('expenses').insert([{
         voucher_id: vId,
         expense_date: document.getElementById('vDate').value,
         amount: parseFloat(document.getElementById('vAmt').value),
@@ -146,7 +150,7 @@
     }
 
     async function loadRecords() {
-      const { data, error } = await _db.from('expenses').select('*').order('created_at', { ascending: false });
+      const { data, error } = await window._db.from('expenses').select('*').order('created_at', { ascending: false });
       if (error) return;
 
       const tbody = document.getElementById('dataTable');
@@ -175,14 +179,14 @@
     async function removeVoucher(id) {
       if (activeRole !== 'admin') return alert("Admin only!");
       if (confirm("Delete this record?")) {
-        const { error } = await _db.from('expenses').delete().eq('id', id);
+        const { error } = await window._db.from('expenses').delete().eq('id', id);
         if (error) alert("Failed: " + error.message);
         else loadRecords();
       }
     }
 
     async function doLogout() {
-      await _db.auth.signOut();
+      await window._db.auth.signOut();
       location.reload();
     }
   </script>
