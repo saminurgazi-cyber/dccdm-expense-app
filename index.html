@@ -68,9 +68,9 @@
   </div>
 
   <script>
-    // Supabase Setup
+    // Supabase Setup with Correct URL & Key
     const SUPABASE_URL = 'https://vtzcwmqiyuqmzgwctuut.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.VC8xy-Rfxva1oY8vW4WXpE1YSPspx2aYdh110SZiE2k';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0emN3bXFpeXVxbXpnd2N0dXV0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYyMDA3NTAsImV4cCI6MjEwMTc3Njc1MH0.VC8xy-Rfxva1oY8vW4WXpE1YSPspx2aYdh110SZiE2k';
     const _db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let activeRole = 'staff';
@@ -93,7 +93,6 @@
       const { data, error } = await _db.auth.signInWithPassword({ email, password: pass });
       if (error) return alert("Login Failed: " + error.message);
 
-      // Check profile role
       const { data: profile } = await _db.from('profiles').select('*').eq('id', data.user.id).single();
 
       if (activeRole === 'admin' && profile?.role !== 'admin') {
