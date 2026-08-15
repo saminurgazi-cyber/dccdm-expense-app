@@ -3,249 +3,189 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DCCDM - Expense Manager</title>
+  <title>DCCDM Expense Manager</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome Icons -->
+  <!-- FontAwesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Supabase Library -->
+  <!-- Supabase JS v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- SheetJS for Excel -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    body { background: #050505; color: #f4f4f5; font-family: sans-serif; }
-    .bg-neon { background-color: #00ff66; }
-    .text-neon { color: #00ff66; }
-    .active-role { background-color: #00ff66 !important; color: #000 !important; font-weight: bold; }
+    body { background: #000; color: #fff; font-family: sans-serif; }
+    .active-tab { background: #00ff66 !important; color: #000 !important; font-weight: bold; }
   </style>
 </head>
-<body class="p-4 min-h-screen">
+<body class="p-4">
 
-  <div class="max-w-5xl mx-auto">
+  <div class="max-w-4xl mx-auto">
     <!-- Header -->
-    <header class="flex justify-between items-center border-b border-zinc-800 pb-4 mb-6">
-      <h1 class="text-lg font-bold text-white tracking-wide">DCCDM EXPENSE MANAGER</h1>
-      <div id="userHeader" class="hidden text-xs text-zinc-400 flex items-center gap-3">
-        <span id="userInfo" class="text-neon font-semibold"></span>
-        <button id="logoutBtn" class="bg-red-900 hover:bg-red-800 text-white px-3 py-1.5 rounded transition">Logout</button>
-      </div>
-    </header>
-
-    <!-- Auth Box -->
-    <div id="authBox" class="max-w-md mx-auto bg-zinc-900 p-6 rounded-xl border border-zinc-800 shadow-xl mt-10">
-      <h2 class="text-center font-bold text-white text-base mb-4">Portal Login</h2>
-      <div class="grid grid-cols-2 gap-2 bg-zinc-950 p-1 rounded-lg mb-5 border border-zinc-800">
-        <button id="staffRoleBtn" type="button" class="py-2 text-xs rounded text-zinc-400 active-role">Staff Portal</button>
-        <button id="adminRoleBtn" type="button" class="py-2 text-xs rounded text-zinc-400">Admin Portal</button>
-      </div>
-      <div class="space-y-3">
-        <input type="email" id="emailInput" placeholder="Enter Email" class="w-full p-2.5 bg-zinc-950 border border-zinc-700 rounded text-sm text-white focus:outline-none focus:border-green-400">
-        <input type="password" id="passInput" placeholder="Enter Password" class="w-full p-2.5 bg-zinc-950 border border-zinc-700 rounded text-sm text-white focus:outline-none focus:border-green-400">
-        <button id="loginBtn" class="w-full bg-neon text-black font-bold py-2.5 rounded text-sm hover:opacity-90 transition">Sign In</button>
-      </div>
+    <div id="topHeader" class="hidden flex justify-between items-center bg-zinc-900 p-3 rounded-lg mb-4 border border-zinc-800">
+      <span id="whoAmI" class="text-xs text-green-400 font-bold"></span>
+      <button onclick="doLogout()" class="bg-red-800 text-white px-3 py-1 rounded text-xs">Logout</button>
     </div>
 
-    <!-- Dashboard -->
-    <div id="dashBox" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <!-- Left: Entry Form -->
-      <div class="lg:col-span-4 bg-zinc-900 p-5 rounded-xl border border-zinc-800 h-fit">
-        <h3 class="font-bold text-white text-sm mb-4 border-b border-zinc-800 pb-2">New Voucher Entry</h3>
-        <form id="expenseForm" class="space-y-3 text-xs">
-          <div>
-            <label class="text-zinc-400 mb-1 block">Date</label>
-            <input type="date" id="expDate" required class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded text-white">
-          </div>
-          <div>
-            <label class="text-zinc-400 mb-1 block">Amount (₹)</label>
-            <input type="number" step="0.01" id="expAmt" required placeholder="0.00" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded text-white">
-          </div>
-          <div>
-            <label class="text-zinc-400 mb-1 block">Category</label>
-            <select id="expCat" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded text-white">
-              <option value="Office Supplies">Office Supplies</option>
-              <option value="Travel & Transport">Travel & Transport</option>
-              <option value="Food & Refreshment">Food & Refreshment</option>
-              <option value="Utility Bills">Utility Bills</option>
-              <option value="Others">Others</option>
-            </select>
-          </div>
-          <div>
-            <label class="text-zinc-400 mb-1 block">Spent By</label>
-            <input type="text" id="expSpent" required placeholder="Person name" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded text-white">
-          </div>
-          <div>
-            <label class="text-zinc-400 mb-1 block">Paid To</label>
-            <input type="text" id="expPaid" required placeholder="Vendor name" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded text-white">
-          </div>
-          <div>
-            <label class="text-zinc-400 mb-1 block">Attachment (Optional)</label>
-            <input type="file" id="expFile" class="w-full text-zinc-400 text-xs">
-          </div>
-          <button type="submit" id="saveBtn" class="w-full bg-neon text-black font-bold py-2.5 rounded mt-2 hover:opacity-90 transition">Save Voucher</button>
-        </form>
+    <!-- Login Box -->
+    <div id="loginCard" class="max-w-md mx-auto bg-zinc-900 p-6 rounded-xl border border-zinc-800 mt-12">
+      <h2 class="text-center font-bold text-lg mb-4">DCCDM Login</h2>
+      <div class="grid grid-cols-2 gap-2 bg-zinc-950 p-1 rounded-lg mb-4">
+        <button type="button" id="btnStaff" onclick="switchRole('staff')" class="active-tab py-2 text-xs rounded">Staff</button>
+        <button type="button" id="btnAdmin" onclick="switchRole('admin')" class="py-2 text-xs rounded text-zinc-400">Admin</button>
+      </div>
+      <input type="email" id="loginEmail" placeholder="Email" class="w-full p-2.5 bg-zinc-950 border border-zinc-700 rounded mb-3 text-sm text-white">
+      <input type="password" id="loginPass" placeholder="Password" class="w-full p-2.5 bg-zinc-950 border border-zinc-700 rounded mb-4 text-sm text-white">
+      <button onclick="doLogin()" class="w-full bg-[#00ff66] text-black font-bold py-2.5 rounded text-sm">Sign In</button>
+    </div>
+
+    <!-- Main Content -->
+    <div id="mainDashboard" class="hidden grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Form -->
+      <div class="bg-zinc-900 p-4 rounded-xl border border-zinc-800 h-fit">
+        <h3 class="font-bold text-sm mb-3 text-green-400">Add Voucher</h3>
+        <input type="date" id="vDate" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded mb-2 text-xs text-white">
+        <input type="number" id="vAmt" placeholder="Amount (₹)" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded mb-2 text-xs text-white">
+        <input type="text" id="vSpent" placeholder="Spent By" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded mb-2 text-xs text-white">
+        <input type="text" id="vPaid" placeholder="Paid To" class="w-full p-2 bg-zinc-950 border border-zinc-700 rounded mb-2 text-xs text-white">
+        <input type="file" id="vFile" class="w-full text-xs mb-3 text-zinc-400">
+        <button onclick="saveVoucher()" class="w-full bg-[#00ff66] text-black font-bold py-2 rounded text-xs">Save Voucher</button>
       </div>
 
-      <!-- Right: Records Table -->
-      <div class="lg:col-span-8 bg-zinc-900 p-5 rounded-xl border border-zinc-800">
-        <div class="flex justify-between items-center mb-4 border-b border-zinc-800 pb-2">
-          <h3 class="font-bold text-white text-sm">Voucher Records</h3>
-          <button id="excelBtn" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-1.5 rounded text-xs font-semibold transition">Export Excel</button>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-xs">
-            <thead>
-              <tr class="text-zinc-500 border-b border-zinc-800">
-                <th class="p-2">Voucher ID</th>
-                <th class="p-2">Date</th>
-                <th class="p-2">Spent By</th>
-                <th class="p-2 text-right">Amount</th>
-                <th class="p-2 text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody id="tableBody" class="divide-y divide-zinc-800 text-zinc-300">
-            </tbody>
-          </table>
-        </div>
+      <!-- Table -->
+      <div class="md:col-span-2 bg-zinc-900 p-4 rounded-xl border border-zinc-800">
+        <h3 class="font-bold text-sm mb-3">Voucher List</h3>
+        <table class="w-full text-left text-xs">
+          <thead>
+            <tr class="text-zinc-500 border-b border-zinc-800">
+              <th class="p-2">ID</th>
+              <th class="p-2">Spent By</th>
+              <th class="p-2">Amount</th>
+              <th class="p-2 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody id="dataTable" class="divide-y divide-zinc-800"></tbody>
+        </table>
       </div>
     </div>
   </div>
 
   <script>
+    // Supabase Setup
     const SUPABASE_URL = 'https://vtzcwmqiyuqmzgwctuut.supabase.co';
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.VC8xy-Rfxva1oY8vW4WXpE1YSPspx2aYdh110SZiE2k';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const _db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let selectedRole = 'staff';
-    let loggedUser = null;
-    let allExpenses = [];
+    let activeRole = 'staff';
+    let currentUser = null;
 
-    document.getElementById('staffRoleBtn').addEventListener('click', () => {
-      selectedRole = 'staff';
-      document.getElementById('staffRoleBtn').classList.add('active-role');
-      document.getElementById('adminRoleBtn').classList.remove('active-role');
-    });
+    document.getElementById('vDate').value = new Date().toISOString().split('T')[0];
 
-    document.getElementById('adminRoleBtn').addEventListener('click', () => {
-      selectedRole = 'admin';
-      document.getElementById('adminRoleBtn').classList.add('active-role');
-      document.getElementById('staffRoleBtn').classList.remove('active-role');
-    });
+    function switchRole(role) {
+      activeRole = role;
+      document.getElementById('btnStaff').classList.toggle('active-tab', role === 'staff');
+      document.getElementById('btnAdmin').classList.toggle('active-tab', role === 'admin');
+    }
 
-    document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
+    async function doLogin() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPass').value;
 
-    document.getElementById('loginBtn').addEventListener('click', async () => {
-      const email = document.getElementById('emailInput').value.trim();
-      const password = document.getElementById('passInput').value;
-      if (!email || !password) return alert("Please enter email & password.");
+      if (!email || !pass) return alert("Please fill all fields");
 
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await _db.auth.signInWithPassword({ email, password: pass });
       if (error) return alert("Login Failed: " + error.message);
 
-      const { data: profile } = await supabase.from('profiles').select('role, full_name').eq('id', data.user.id).single();
-      
-      if (selectedRole === 'admin' && profile?.role !== 'admin') {
-        await supabase.auth.signOut();
-        return alert("Access Denied! You do not have Admin privileges.");
+      // Check profile role
+      const { data: profile } = await _db.from('profiles').select('*').eq('id', data.user.id).single();
+
+      if (activeRole === 'admin' && profile?.role !== 'admin') {
+        await _db.auth.signOut();
+        return alert("Access Denied! You are not an Admin.");
       }
 
-      loggedUser = data.user;
-      document.getElementById('authBox').classList.add('hidden');
-      document.getElementById('dashBox').classList.remove('hidden');
-      document.getElementById('userHeader').classList.remove('hidden');
-      document.getElementById('userInfo').innerText = `${profile?.full_name || data.user.email} (${selectedRole.toUpperCase()})`;
-      loadExpenses();
-    });
+      currentUser = data.user;
+      document.getElementById('loginCard').classList.add('hidden');
+      document.getElementById('topHeader').classList.remove('hidden');
+      document.getElementById('mainDashboard').classList.remove('hidden');
+      document.getElementById('whoAmI').innerText = `Logged in as: ${data.user.email} (${activeRole.toUpperCase()})`;
 
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-      await supabase.auth.signOut();
-      location.reload();
-    });
+      loadRecords();
+    }
 
-    document.getElementById('expenseForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const saveBtn = document.getElementById('saveBtn');
-      saveBtn.innerText = "Saving...";
-      saveBtn.disabled = true;
-
-      const vId = 'DCCDM-' + new Date().getFullYear() + '-' + Math.floor(1000 + Math.random() * 9000);
-      const fileInput = document.getElementById('expFile');
-      let attachmentUrl = null;
+    async function saveVoucher() {
+      const vId = 'DCCDM-' + Math.floor(1000 + Math.random() * 9000);
+      const fileInput = document.getElementById('vFile');
+      let fileUrl = null;
 
       if (fileInput.files.length > 0) {
         const file = fileInput.files[0];
-        const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
-        const { error: uploadError } = await supabase.storage.from('vouchers').upload(fileName, file);
-        if (!uploadError) {
-          const { data: urlData } = supabase.storage.from('vouchers').getPublicUrl(fileName);
-          attachmentUrl = urlData.publicUrl;
+        const fName = `${Date.now()}_${file.name}`;
+        const { error: upErr } = await _db.storage.from('vouchers').upload(fName, file);
+        if (!upErr) {
+          const { data: pubData } = _db.storage.from('vouchers').getPublicUrl(fName);
+          fileUrl = pubData.publicUrl;
         }
       }
 
-      const { error: insertError } = await supabase.from('expenses').insert([{
+      const { error: insErr } = await _db.from('expenses').insert([{
         voucher_id: vId,
-        expense_date: document.getElementById('expDate').value,
-        amount: parseFloat(document.getElementById('expAmt').value),
-        category: document.getElementById('expCat').value,
-        spent_by: document.getElementById('expSpent').value.trim(),
-        paid_to: document.getElementById('expPaid').value.trim(),
-        attachment_url: attachmentUrl,
-        created_by: loggedUser.id
+        expense_date: document.getElementById('vDate').value,
+        amount: parseFloat(document.getElementById('vAmt').value),
+        spent_by: document.getElementById('vSpent').value.trim(),
+        paid_to: document.getElementById('vPaid').value.trim(),
+        attachment_url: fileUrl,
+        created_by: currentUser.id
       }]);
 
-      if (insertError) {
-        alert("Error saving: " + insertError.message);
-      } else {
-        alert("Voucher Saved Successfully!");
-        document.getElementById('expenseForm').reset();
-        document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
-        loadExpenses();
+      if (insErr) alert("Error: " + insErr.message);
+      else {
+        alert("Voucher Saved!");
+        document.getElementById('vAmt').value = '';
+        document.getElementById('vSpent').value = '';
+        document.getElementById('vPaid').value = '';
+        document.getElementById('vFile').value = '';
+        loadRecords();
       }
-      saveBtn.innerText = "Save Voucher";
-      saveBtn.disabled = false;
-    });
+    }
 
-    async function loadExpenses() {
-      const { data, error } = await supabase.from('expenses').select('*').order('created_at', { ascending: false });
+    async function loadRecords() {
+      const { data, error } = await _db.from('expenses').select('*').order('created_at', { ascending: false });
       if (error) return;
-      allExpenses = data || [];
-      const tbody = document.getElementById('tableBody');
+
+      const tbody = document.getElementById('dataTable');
       tbody.innerHTML = '';
-      if (allExpenses.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center p-4 text-zinc-500">No records found.</td></tr>`;
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-zinc-500">No data found</td></tr>`;
         return;
       }
-      allExpenses.forEach(item => {
+
+      data.forEach(item => {
         tbody.innerHTML += `
-          <tr class="hover:bg-zinc-800/40 transition">
-            <td class="p-2 font-mono text-neon font-bold">${item.voucher_id}</td>
-            <td class="p-2">${item.expense_date}</td>
+          <tr class="hover:bg-zinc-800/50">
+            <td class="p-2 font-mono text-green-400">${item.voucher_id}</td>
             <td class="p-2">${item.spent_by}</td>
-            <td class="p-2 text-right font-bold">₹${Number(item.amount).toFixed(2)}</td>
+            <td class="p-2">₹${item.amount}</td>
             <td class="p-2 text-center flex justify-center gap-2">
-              ${item.attachment_url ? `<a href="${item.attachment_url}" target="_blank" title="Download File" class="text-blue-400 hover:text-blue-300"><i class="fa fa-download"></i></a>` : ''}
-              ${selectedRole === 'admin' ? `<button onclick="deleteVoucher(${item.id}, '${item.voucher_id}')" title="Delete Voucher" class="text-red-400 hover:text-red-300"><i class="fa fa-trash"></i></button>` : ''}
+              ${item.attachment_url ? `<a href="${item.attachment_url}" target="_blank" class="text-blue-400"><i class="fa fa-download"></i></a>` : ''}
+              ${activeRole === 'admin' ? `<button onclick="removeVoucher(${item.id})" class="text-red-400"><i class="fa fa-trash"></i></button>` : ''}
             </td>
           </tr>
         `;
       });
     }
 
-    async function deleteVoucher(id, vId) {
-      if (selectedRole !== 'admin') return alert("Unauthorized!");
-      if (confirm(`Delete Voucher ${vId}?`)) {
-        const { error } = await supabase.from('expenses').delete().eq('id', id);
-        if (error) alert("Delete failed: " + error.message);
-        else { alert("Deleted successfully."); loadExpenses(); }
+    async function removeVoucher(id) {
+      if (activeRole !== 'admin') return alert("Admin only!");
+      if (confirm("Delete this record?")) {
+        const { error } = await _db.from('expenses').delete().eq('id', id);
+        if (error) alert("Failed: " + error.message);
+        else loadRecords();
       }
     }
 
-    document.getElementById('excelBtn').addEventListener('click', () => {
-      if (allExpenses.length === 0) return alert("No data to export.");
-      const ws = XLSX.utils.json_to_sheet(allExpenses);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Expenses");
-      XLSX.writeFile(wb, "DCCDM_Expenses.xlsx");
-    });
+    async function doLogout() {
+      await _db.auth.signOut();
+      location.reload();
+    }
   </script>
 </body>
 </html>
